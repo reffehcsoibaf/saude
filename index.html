@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Controle do Plano de Saúde</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --border:#e2e4e8; --text:#1c1e21; --muted:#6b7280;
+    --accent:#2563eb; --accent-bg:#eaf1fd; --danger:#dc2626; --danger-bg:#fdecec;
+    --success:#16a34a; --success-bg:#eafaf0; --warning:#d97706; --warning-bg:#fef6e7;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:24px;}
+  .wrap{max-width:820px;margin:0 auto;}
+  h1{font-size:20px;font-weight:600;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 20px;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+  .metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .metric .label{font-size:12px;color:var(--muted);}
+  .metric .value{font-size:22px;font-weight:600;margin-top:4px;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;}
+  .panel h2{font-size:15px;margin:0 0 14px;font-weight:600;}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+  input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;color:var(--text);}
+  textarea{resize:vertical;min-height:50px;}
+  button{cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:500;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+  .btn-ghost:hover{background:#f2f3f5;}
+  .btn-danger-ghost{background:transparent;border:1px solid var(--border);color:var(--danger);font-size:12px;padding:5px 10px;}
+  .btn-danger-ghost:hover{background:var(--danger-bg);}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px;}
+  .toolbar > div{flex:1;min-width:140px;}
+  .list{display:flex;flex-direction:column;gap:10px;}
+  .item{border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;}
+  .item .main{flex:1;}
+  .item .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;}
+  .badge{font-size:11px;padding:2px 8px;border-radius:100px;font-weight:500;}
+  .badge-consulta{background:var(--accent-bg);color:var(--accent);}
+  .badge-exame{background:#f3e8fd;color:#7c3aed;}
+  .badge-procedimento{background:var(--warning-bg);color:var(--warning);}
+  .badge-outro{background:#eee;color:#555;}
+  .status{font-size:11px;padding:2px 8px;border-radius:100px;font-weight:500;}
+  .status-titular{background:var(--accent-bg);color:var(--accent);}
+  .status-dependente{background:#f3e8fd;color:#7c3aed;}
+  .desc{font-weight:500;font-size:14px;}
+  .meta{font-size:12px;color:var(--muted);margin-top:2px;}
+  .vals{text-align:right;font-size:13px;white-space:nowrap;}
+  .vals .paid{font-weight:600;}
+  .empty{text-align:center;color:var(--muted);padding:30px 0;font-size:14px;}
+  .actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;justify-content:space-between;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Controle do plano de saúde</h1>
+  <p class="sub" id="planInfo">Registre consultas, exames e procedimentos seus e do dependente, com cálculo automático da coparticipação de 20%.</p>
+
+  <div class="cards" id="metrics"></div>
+
+  <div class="panel">
+    <h2>Novo registro</h2>
+    <div class="row3">
+      <div>
+        <label>Tipo</label>
+        <select id="f-tipo">
+          <option value="consulta">Consulta</option>
+          <option value="exame">Exame</option>
+          <option value="procedimento">Procedimento</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div>
+        <label>Data</label>
+        <input type="date" id="f-data">
+      </div>
+      <div>
+        <label>Para quem</label>
+        <select id="f-pessoa">
+          <option value="titular">Titular (eu)</option>
+          <option value="dependente">Dependente</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Prestador / clínica</label>
+        <input type="text" id="f-prestador" placeholder="Ex: Dr. Silva, Hospital X">
+      </div>
+      <div>
+        <label>Descrição</label>
+        <input type="text" id="f-desc" placeholder="Ex: Consulta cardiologista">
+      </div>
+    </div>
+    <div class="row3">
+      <div>
+        <label>Cobrança</label>
+        <select id="f-cobranca" onchange="updateCopart()">
+          <option value="percentual">Percentual (20%)</option>
+          <option value="fixo">Valor fixo</option>
+          <option value="isento">Isento</option>
+        </select>
+      </div>
+      <div>
+        <label>Valor do procedimento (R$)</label>
+        <input type="number" id="f-valor" step="0.01" min="0" placeholder="0,00" oninput="updateCopart()">
+      </div>
+      <div>
+        <label>Coparticipação (R$)</label>
+        <input type="number" id="f-copart" step="0.01" min="0" placeholder="0,00">
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label>Observações</label>
+      <textarea id="f-obs" placeholder="Notas adicionais (opcional)"></textarea>
+    </div>
+    <button class="btn-primary" onclick="addEntry()">Adicionar registro</button>
+  </div>
+
+  <div class="panel">
+    <h2>Histórico</h2>
+    <div class="toolbar">
+      <div>
+        <label>Filtrar por tipo</label>
+        <select id="filter-tipo" onchange="render()">
+          <option value="">Todos</option>
+          <option value="consulta">Consulta</option>
+          <option value="exame">Exame</option>
+          <option value="procedimento">Procedimento</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div>
+        <label>Filtrar por pessoa</label>
+        <select id="filter-pessoa" onchange="render()">
+          <option value="">Todos</option>
+          <option value="titular">Titular (eu)</option>
+          <option value="dependente">Dependente</option>
+        </select>
+      </div>
+      <div style="flex:0;">
+        <button class="btn-ghost" onclick="clearFilters()">Limpar filtros</button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;">v1.2.0</div>
+</div>
+
+<script>
+const tipoLabel = {consulta:"Consulta", exame:"Exame", procedimento:"Procedimento", outro:"Outro"};
+const pessoaLabel = {titular:"Titular", dependente:"Dependente"};
+const cobrancaLabel = {percentual:"20%", fixo:"valor fixo", isento:"isento"};
+let entries = [];
+
+function updateCopart(){
+  const cobranca = document.getElementById('f-cobranca').value;
+  const valor = parseFloat(document.getElementById('f-valor').value) || 0;
+  const copartField = document.getElementById('f-copart');
+  if(cobranca === 'percentual'){
+    copartField.value = (valor * 0.2).toFixed(2);
+    copartField.disabled = false;
+  } else if(cobranca === 'isento'){
+    copartField.value = '0.00';
+    copartField.disabled = true;
+  } else {
+    copartField.disabled = false;
+  }
+}
+
+function fmtMoney(n){
+  return (n||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+}
+function fmtDate(d){
+  if(!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+async function loadEntries(){
+  try{
+    const res = await window.storage.get('plano-saude:entries', false);
+    entries = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    entries = [];
+  }
+  render();
+}
+
+async function saveEntries(){
+  try{
+    await window.storage.set('plano-saude:entries', JSON.stringify(entries), false);
+  }catch(e){
+    console.error('Falha ao salvar', e);
+  }
+}
+
+async function addEntry(){
+  const tipo = document.getElementById('f-tipo').value;
+  const data = document.getElementById('f-data').value;
+  const pessoa = document.getElementById('f-pessoa').value;
+  const prestador = document.getElementById('f-prestador').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
+  const valor = parseFloat(document.getElementById('f-valor').value) || 0;
+  const cobranca = document.getElementById('f-cobranca').value;
+  const copart = parseFloat(document.getElementById('f-copart').value) || 0;
+  const obs = document.getElementById('f-obs').value.trim();
+
+  if(!data || !desc){
+    alert('Preencha ao menos a data e a descrição.');
+    return;
+  }
+
+  entries.unshift({
+    id: 'e' + Date.now(),
+    tipo, data, pessoa, prestador, desc, valor, cobranca, copart, obs
+  });
+
+  await saveEntries();
+
+  document.getElementById('f-data').value = '';
+  document.getElementById('f-prestador').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-valor').value = '';
+  document.getElementById('f-copart').value = '';
+  document.getElementById('f-copart').disabled = false;
+  document.getElementById('f-cobranca').value = 'percentual';
+  document.getElementById('f-obs').value = '';
+  document.getElementById('f-pessoa').value = 'titular';
+  document.getElementById('f-tipo').value = 'consulta';
+
+  render();
+}
+
+async function removeEntry(id){
+  entries = entries.filter(e => e.id !== id);
+  await saveEntries();
+  render();
+}
+
+function clearFilters(){
+  document.getElementById('filter-tipo').value = '';
+  document.getElementById('filter-status').value = '';
+  render();
+}
+
+function render(){
+  const ftipo = document.getElementById('filter-tipo').value;
+  const fpessoa = document.getElementById('filter-pessoa').value;
+
+  const filtered = entries.filter(e =>
+    (!ftipo || e.tipo === ftipo) && (!fpessoa || e.pessoa === fpessoa)
+  );
+
+  const totalProcedimentos = entries.reduce((s,e)=> s + (e.valor||0), 0);
+  const totalCopart = entries.reduce((s,e)=> s + (e.copart||0), 0);
+  const copartTitular = entries.filter(e=>e.pessoa==='titular').reduce((s,e)=> s + (e.copart||0), 0);
+  const copartDependente = entries.filter(e=>e.pessoa==='dependente').reduce((s,e)=> s + (e.copart||0), 0);
+
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div class="label">Registros</div><div class="value">${entries.length}</div></div>
+    <div class="metric"><div class="label">Total coparticipação</div><div class="value">${fmtMoney(totalCopart)}</div></div>
+    <div class="metric"><div class="label">Coparticipação titular</div><div class="value">${fmtMoney(copartTitular)}</div></div>
+    <div class="metric"><div class="label">Coparticipação dependente</div><div class="value">${fmtMoney(copartDependente)}</div></div>
+  `;
+
+  const list = document.getElementById('list');
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="empty">Nenhum registro encontrado.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(e => `
+    <div class="item">
+      <div class="main">
+        <div class="top">
+          <span class="badge badge-${e.tipo}">${tipoLabel[e.tipo]}</span>
+          <span class="status status-${e.pessoa}">${pessoaLabel[e.pessoa]}</span>
+        </div>
+        <div class="desc">${escapeHtml(e.desc)}</div>
+        <div class="meta">${fmtDate(e.data)}${e.prestador ? ' · ' + escapeHtml(e.prestador) : ''}</div>
+        ${e.obs ? `<div class="meta">${escapeHtml(e.obs)}</div>` : ''}
+      </div>
+      <div class="actions">
+        <div class="vals">
+          <div class="paid">${fmtMoney(e.valor)}</div>
+          <div style="color:var(--warning)">copart (${cobrancaLabel[e.cobranca] || '20%'}): ${fmtMoney(e.copart)}</div>
+        </div>
+        <button class="btn-danger-ghost" onclick="removeEntry('${e.id}')">Excluir</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+loadEntries();
+</script>
+</body>
+</html>
