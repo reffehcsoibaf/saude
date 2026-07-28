@@ -3,6 +3,13 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.5.0
+- Data, mês de referência, categoria e prestador do formulário de Novo procedimento agora são lembrados entre lançamentos, enquanto a aba do navegador continuar aberta (usa `sessionStorage`).
+- Novo campo de **anexo** na aba Novo procedimento: o documento enviado junto fica vinculado ao procedimento gravado.
+- Documentos enviados pela aba Novo procedimento ou pela Agenda têm a descrição preenchida automaticamente informando a qual lançamento/evento pertencem, e a aba Documentos mostra esse vínculo.
+- Adicionada coluna `procedimento_id` na tabela `documentos` (migração incluída no `schema.sql`, segura para rodar de novo).
+- Filtro de vínculo na aba Documentos passou a considerar tanto agendamentos quanto procedimentos ("Vinculado a um lançamento" / "Avulso").
+
 ## v2.4.0
 - Botão **Editar** em cada linha do Histórico: preenche o formulário de Novo procedimento com os dados existentes, muda para o modo edição ("Salvar edição" / "Cancelar edição") e grava como atualização (não cria duplicado).
 - As métricas do Histórico agora somam apenas os **itens filtrados exibidos**, não mais o total geral de todos os registros.

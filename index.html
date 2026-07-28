@@ -178,6 +178,10 @@
           <label for="f-obs">Observações</label>
           <textarea id="f-obs" rows="4"></textarea>
         </div>
+        <div style="margin-bottom:12px;">
+          <label for="f-anexo">Anexo</label>
+          <input type="file" id="f-anexo">
+        </div>
         <div class="btn-row">
           <button type="submit" class="btn-primary" id="btn-salvar-novo" onclick="salvarProcedimento()">Gravar registro</button>
           <button type="button" class="btn-ghost" onclick="limparFormNovo()">Limpar formulário</button>
@@ -384,7 +388,7 @@
           <label for="d-vinculo">Vínculo</label>
           <select id="d-vinculo" onchange="renderDocumentos()">
             <option value="">Todos</option>
-            <option value="agenda">Vinculado a um agendamento</option>
+            <option value="vinculado">Vinculado a um lançamento</option>
             <option value="avulso">Avulso</option>
           </select>
         </div>
@@ -423,7 +427,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.4.0</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.5.0</div>
   </div>
 </div>
 
@@ -504,6 +508,7 @@ async function entrarNoApp(email){
   document.getElementById('app-conteudo').classList.remove('hidden');
   document.getElementById('usuario-logado').textContent = email ? `Logado como ${email}` : '';
   await carregarListas();
+  restaurarCamposLembrados();
   await carregarProcedimentos();
   await carregarAgenda();
   await carregarDocumentos();
@@ -586,8 +591,26 @@ window.updateCopart = function(){
   else { campo.disabled = false; }
 };
 
+const CAMPOS_LEMBRADOS = ['f-data','f-mes-ref','f-categoria','f-prestador'];
+
+function salvarCamposLembrados(){
+  CAMPOS_LEMBRADOS.forEach(id => {
+    sessionStorage.setItem('lembrar_' + id, document.getElementById(id).value);
+  });
+}
+
+function restaurarCamposLembrados(){
+  CAMPOS_LEMBRADOS.forEach(id => {
+    const v = sessionStorage.getItem('lembrar_' + id);
+    if(v) document.getElementById(id).value = v;
+  });
+}
+
 window.limparFormNovo = function(){
+  const lembrar = {};
+  CAMPOS_LEMBRADOS.forEach(id => lembrar[id] = document.getElementById(id).value);
   document.getElementById('form-novo').reset();
+  CAMPOS_LEMBRADOS.forEach(id => document.getElementById(id).value = lembrar[id]);
   document.getElementById('f-copart').disabled = false;
   window.cancelarEdicao();
 };
@@ -641,19 +664,38 @@ window.salvarProcedimento = async function(){
     return;
   }
 
+  const arquivoInput = document.getElementById('f-anexo');
+  let procedimentoId = editId || null;
+
   if(editId){
     const { error } = await supabase.from('procedimentos').update(registro).eq('id', editId);
     if(error){ showStatus('Erro ao salvar edição: ' + error.message, 'error'); return; }
-    showStatus('Edição salva.', 'ok');
   } else {
     registro.pago = false;
-    const { error } = await supabase.from('procedimentos').insert(registro);
+    const { data: novo, error } = await supabase.from('procedimentos').insert(registro).select().single();
     if(error){ showStatus('Erro ao gravar: ' + error.message, 'error'); return; }
-    showStatus('Registro gravado.', 'ok');
+    procedimentoId = novo.id;
   }
 
+  let anexoOk = true;
+  if(arquivoInput.files[0]){
+    anexoOk = await uploadDocumento(
+      arquivoInput.files[0],
+      `Anexo do procedimento: ${registro.categoria} em ${registro.data} (${registro.prestador})`,
+      { procedimentoId }
+    );
+  }
+
+  if(anexoOk){
+    showStatus(editId ? 'Edição salva.' : 'Registro gravado.', 'ok');
+  } else {
+    showStatus((editId ? 'Edição salva' : 'Registro gravado') + ', mas o anexo falhou (veja o erro acima).', 'error');
+  }
+
+  salvarCamposLembrados();
   window.limparFormNovo();
   await carregarProcedimentos();
+  await carregarDocumentos();
 };
 
 async function carregarProcedimentos(){
@@ -777,7 +819,7 @@ window.salvarAgenda = async function(){
 
   let anexoOk = true;
   if(arquivoInput.files[0]){
-    anexoOk = await uploadDocumento(arquivoInput.files[0], `Anexo do agendamento: ${categoria} em ${fmtDataHora(novo.data_hora)}`, novo.id);
+    anexoOk = await uploadDocumento(arquivoInput.files[0], `Anexo do agendamento: ${categoria} em ${fmtDataHora(novo.data_hora)}`, { agendaId: novo.id });
   }
 
   if(anexoOk){
@@ -857,7 +899,8 @@ window.removerAgenda = async function(id){
   await carregarAgenda();
 };
 
-async function uploadDocumento(arquivo, descricao, agendaId){
+async function uploadDocumento(arquivo, descricao, vinculo){
+  vinculo = vinculo || {};
   const caminho = `${Date.now()}_${arquivo.name}`;
   const { error: upErr } = await supabase.storage.from(DOC_BUCKET).upload(caminho, arquivo);
   if(upErr){
@@ -866,7 +909,9 @@ async function uploadDocumento(arquivo, descricao, agendaId){
     return false;
   }
   const { error } = await supabase.from('documentos').insert({
-    nome_arquivo: arquivo.name, descricao, storage_path: caminho, agenda_id: agendaId || null
+    nome_arquivo: arquivo.name, descricao, storage_path: caminho,
+    agenda_id: vinculo.agendaId || null,
+    procedimento_id: vinculo.procedimentoId || null
   });
   if(error){
     console.error('Falha ao registrar documento:', error);
@@ -889,7 +934,9 @@ window.salvarDocumento = async function(){
 };
 
 async function carregarDocumentos(){
-  const { data, error } = await supabase.from('documentos').select('*, agenda(categoria, data_hora)').order('created_at', {ascending:false});
+  const { data, error } = await supabase.from('documentos')
+    .select('*, agenda(categoria, data_hora), procedimento:procedimento_id(categoria, data, prestador)')
+    .order('created_at', {ascending:false});
   if(error){ showStatus('Erro ao carregar documentos: ' + error.message, 'error'); return; }
   documentos = data || [];
   renderDocumentos();
@@ -906,10 +953,11 @@ function renderDocumentos(){
   const fVinculo = document.getElementById('d-vinculo').value;
 
   const filtrados = documentos.filter(d => {
-    if(fVinculo === 'agenda' && !d.agenda) return false;
-    if(fVinculo === 'avulso' && d.agenda) return false;
+    const vinculado = !!(d.agenda || d.procedimento);
+    if(fVinculo === 'vinculado' && !vinculado) return false;
+    if(fVinculo === 'avulso' && vinculado) return false;
     if(fBusca){
-      const alvo = [d.nome_arquivo, d.descricao, d.agenda?.categoria].join(' ').toLowerCase();
+      const alvo = [d.nome_arquivo, d.descricao, d.agenda?.categoria, d.procedimento?.categoria].join(' ').toLowerCase();
       if(!alvo.includes(fBusca)) return false;
     }
     return true;
@@ -923,6 +971,7 @@ function renderDocumentos(){
         <div style="font-weight:500;">${escapeHtml(d.nome_arquivo)}</div>
         <div class="sub" style="margin:2px 0 0;">${escapeHtml(d.descricao || 'Sem descrição')}</div>
         ${d.agenda ? `<div class="sub" style="margin:2px 0 0;">Pertence ao agendamento: ${escapeHtml(d.agenda.categoria)} em ${fmtDataHora(d.agenda.data_hora)}</div>` : ''}
+        ${d.procedimento ? `<div class="sub" style="margin:2px 0 0;">Pertence ao procedimento: ${escapeHtml(d.procedimento.categoria)} em ${fmtData(d.procedimento.data)} (${escapeHtml(d.procedimento.prestador)})</div>` : ''}
       </div>
       <div class="btn-row">
         <button class="btn-ghost" onclick="abrirDocumento('${d.storage_path}')">Abrir</button>

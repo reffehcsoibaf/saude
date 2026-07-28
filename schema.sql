@@ -53,8 +53,11 @@ create table if not exists documentos (
   descricao text,
   storage_path text not null,
   agenda_id uuid references agenda(id) on delete set null,
+  procedimento_id uuid references procedimentos(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+alter table documentos add column if not exists procedimento_id uuid references procedimentos(id) on delete set null;
 
 -- Storage: crie manualmente um bucket chamado "documentos" (privado)
 -- em Storage > New bucket no painel do Supabase.
