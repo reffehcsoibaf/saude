@@ -119,12 +119,18 @@
 
   <section class="tab-panel" role="tabpanel" id="tab-novo" aria-labelledby="tab-btn-novo">
     <div class="panel">
-      <h2>Novo procedimento</h2>
+      <h2 id="titulo-form-novo">Novo procedimento</h2>
+      <p class="sub hidden" id="aviso-edicao">Editando um registro existente.</p>
       <form id="form-novo" onsubmit="return false;">
+        <input type="hidden" id="f-edit-id" value="">
         <div class="row3">
           <div>
             <label for="f-data">Data</label>
             <input type="date" id="f-data" required>
+          </div>
+          <div>
+            <label for="f-mes-ref">Mês de referência</label>
+            <input type="month" id="f-mes-ref">
           </div>
           <div>
             <label for="f-usuario">Usuário</label>
@@ -133,6 +139,8 @@
               <option value="dependente">Dependente</option>
             </select>
           </div>
+        </div>
+        <div class="row3">
           <div>
             <label for="f-categoria">Categoria</label>
             <div class="combo">
@@ -140,8 +148,6 @@
               <button type="button" class="btn-ghost" onclick="addListItem('categorias')" aria-label="Adicionar nova categoria">+</button>
             </div>
           </div>
-        </div>
-        <div class="row">
           <div>
             <label for="f-prestador">Prestador</label>
             <div class="combo">
@@ -173,8 +179,9 @@
           <textarea id="f-obs" rows="4"></textarea>
         </div>
         <div class="btn-row">
-          <button type="submit" class="btn-primary" onclick="salvarProcedimento()">Gravar registro</button>
+          <button type="submit" class="btn-primary" id="btn-salvar-novo" onclick="salvarProcedimento()">Gravar registro</button>
           <button type="button" class="btn-ghost" onclick="limparFormNovo()">Limpar formulário</button>
+          <button type="button" class="btn-ghost hidden" id="btn-cancelar-edicao" onclick="cancelarEdicao()">Cancelar edição</button>
         </div>
       </form>
     </div>
@@ -189,6 +196,10 @@
           <input type="date" id="h-data" onchange="renderHistorico()">
         </div>
         <div>
+          <label for="h-mes-ref">Mês de referência</label>
+          <input type="month" id="h-mes-ref" onchange="renderHistorico()">
+        </div>
+        <div>
           <label for="h-categoria">Categoria</label>
           <select id="h-categoria" onchange="renderHistorico()"><option value="">Todas</option></select>
         </div>
@@ -196,6 +207,8 @@
           <label for="h-prestador">Prestador</label>
           <select id="h-prestador" onchange="renderHistorico()"><option value="">Todos</option></select>
         </div>
+      </div>
+      <div class="row3">
         <div>
           <label for="h-usuario">Usuário</label>
           <select id="h-usuario" onchange="renderHistorico()">
@@ -204,8 +217,6 @@
             <option value="dependente">Dependente</option>
           </select>
         </div>
-      </div>
-      <div class="row">
         <div>
           <label for="h-status">Status</label>
           <select id="h-status" onchange="renderHistorico()">
@@ -233,6 +244,7 @@
           <tr>
             <th scope="col"><span class="sr-only">Pago</span></th>
             <th scope="col">Data</th>
+            <th scope="col">Mês ref.</th>
             <th scope="col">Usuário</th>
             <th scope="col">Categoria</th>
             <th scope="col">Prestador</th>
@@ -411,7 +423,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.2.0</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.4.0</div>
   </div>
 </div>
 
@@ -431,6 +443,7 @@ let documentos = [];
 
 function fmtMoney(n){ return (Number(n)||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
 function fmtData(d){ if(!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
+function fmtMesRef(d){ if(!d) return ''; const [y,m] = d.split('-'); return `${m}/${y}`; }
 function fmtDataHora(iso){ if(!iso) return ''; const dt = new Date(iso); return dt.toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}); }
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 function showStatus(msg, type){
@@ -576,27 +589,69 @@ window.updateCopart = function(){
 window.limparFormNovo = function(){
   document.getElementById('form-novo').reset();
   document.getElementById('f-copart').disabled = false;
+  window.cancelarEdicao();
+};
+
+window.cancelarEdicao = function(){
+  document.getElementById('f-edit-id').value = '';
+  document.getElementById('titulo-form-novo').textContent = 'Novo procedimento';
+  document.getElementById('aviso-edicao').classList.add('hidden');
+  document.getElementById('btn-salvar-novo').textContent = 'Gravar registro';
+  document.getElementById('btn-cancelar-edicao').classList.add('hidden');
+};
+
+window.editarProcedimento = function(id){
+  const p = procedimentos.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('f-edit-id').value = p.id;
+  document.getElementById('f-data').value = p.data || '';
+  document.getElementById('f-mes-ref').value = p.mes_referencia ? p.mes_referencia.slice(0,7) : '';
+  document.getElementById('f-usuario').value = p.usuario;
+  document.getElementById('f-categoria').value = p.categoria;
+  document.getElementById('f-prestador').value = p.prestador;
+  document.getElementById('f-cobranca').value = p.cobranca_tipo;
+  document.getElementById('f-valor').value = p.valor_procedimento;
+  document.getElementById('f-copart').value = p.valor_coparticipacao;
+  document.getElementById('f-copart').disabled = p.cobranca_tipo === 'isento';
+  document.getElementById('f-obs').value = p.observacoes || '';
+
+  document.getElementById('titulo-form-novo').textContent = 'Editar procedimento';
+  document.getElementById('aviso-edicao').classList.remove('hidden');
+  document.getElementById('btn-salvar-novo').textContent = 'Salvar edição';
+  document.getElementById('btn-cancelar-edicao').classList.remove('hidden');
+
+  showTab('novo');
 };
 
 window.salvarProcedimento = async function(){
+  const editId = document.getElementById('f-edit-id').value;
   const registro = {
     data: document.getElementById('f-data').value,
+    mes_referencia: document.getElementById('f-mes-ref').value ? document.getElementById('f-mes-ref').value + '-01' : null,
     usuario: document.getElementById('f-usuario').value,
     categoria: document.getElementById('f-categoria').value,
     prestador: document.getElementById('f-prestador').value,
     cobranca_tipo: document.getElementById('f-cobranca').value,
     valor_procedimento: parseFloat(document.getElementById('f-valor').value) || 0,
     valor_coparticipacao: parseFloat(document.getElementById('f-copart').value) || 0,
-    observacoes: document.getElementById('f-obs').value.trim() || null,
-    pago: false
+    observacoes: document.getElementById('f-obs').value.trim() || null
   };
   if(!registro.data || !registro.categoria || !registro.prestador){
     showStatus('Preencha data, categoria e prestador.', 'error');
     return;
   }
-  const { error } = await supabase.from('procedimentos').insert(registro);
-  if(error){ showStatus('Erro ao gravar: ' + error.message, 'error'); return; }
-  showStatus('Registro gravado.', 'ok');
+
+  if(editId){
+    const { error } = await supabase.from('procedimentos').update(registro).eq('id', editId);
+    if(error){ showStatus('Erro ao salvar edição: ' + error.message, 'error'); return; }
+    showStatus('Edição salva.', 'ok');
+  } else {
+    registro.pago = false;
+    const { error } = await supabase.from('procedimentos').insert(registro);
+    if(error){ showStatus('Erro ao gravar: ' + error.message, 'error'); return; }
+    showStatus('Registro gravado.', 'ok');
+  }
+
   window.limparFormNovo();
   await carregarProcedimentos();
 };
@@ -609,12 +664,13 @@ async function carregarProcedimentos(){
 }
 
 window.limparFiltrosHistorico = function(){
-  ['h-data','h-categoria','h-prestador','h-usuario','h-status','h-busca'].forEach(id => document.getElementById(id).value = '');
+  ['h-data','h-mes-ref','h-categoria','h-prestador','h-usuario','h-status','h-busca'].forEach(id => document.getElementById(id).value = '');
   renderHistorico();
 };
 
 window.renderHistorico = function(){
   const fData = document.getElementById('h-data').value;
+  const fMesRef = document.getElementById('h-mes-ref').value;
   const fCategoria = document.getElementById('h-categoria').value;
   const fPrestador = document.getElementById('h-prestador').value;
   const fUsuario = document.getElementById('h-usuario').value;
@@ -623,6 +679,7 @@ window.renderHistorico = function(){
 
   const filtrados = procedimentos.filter(p => {
     if(fData && p.data !== fData) return false;
+    if(fMesRef && !(p.mes_referencia || '').startsWith(fMesRef)) return false;
     if(fCategoria && p.categoria !== fCategoria) return false;
     if(fPrestador && p.prestador !== fPrestador) return false;
     if(fUsuario && p.usuario !== fUsuario) return false;
@@ -635,12 +692,14 @@ window.renderHistorico = function(){
     return true;
   });
 
-  const totalCopart = procedimentos.reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
-  const totalAberto = procedimentos.filter(p=>!p.pago).reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
-  const totalTitular = procedimentos.filter(p=>p.usuario==='titular').reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
-  const totalDependente = procedimentos.filter(p=>p.usuario==='dependente').reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
+  const totalValor = filtrados.reduce((s,p)=> s + Number(p.valor_procedimento||0), 0);
+  const totalCopart = filtrados.reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
+  const totalAberto = filtrados.filter(p=>!p.pago).reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
+  const totalTitular = filtrados.filter(p=>p.usuario==='titular').reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
+  const totalDependente = filtrados.filter(p=>p.usuario==='dependente').reduce((s,p)=> s + Number(p.valor_coparticipacao||0), 0);
 
   document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div class="label">Total do procedimento</div><div class="value">${fmtMoney(totalValor)}</div></div>
     <div class="metric"><div class="label">Total coparticipação</div><div class="value">${fmtMoney(totalCopart)}</div></div>
     <div class="metric"><div class="label">Em aberto</div><div class="value">${fmtMoney(totalAberto)}</div></div>
     <div class="metric"><div class="label">Titular</div><div class="value">${fmtMoney(totalTitular)}</div></div>
@@ -649,7 +708,7 @@ window.renderHistorico = function(){
 
   const body = document.getElementById('historico-body');
   if(filtrados.length === 0){
-    body.innerHTML = `<tr><td colspan="9" class="empty">Nenhum registro encontrado.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" class="empty">Nenhum registro encontrado.</td></tr>`;
     return;
   }
   body.innerHTML = filtrados.map(p => `
@@ -659,13 +718,19 @@ window.renderHistorico = function(){
         <input type="checkbox" id="pago-${p.id}" ${p.pago ? 'checked' : ''} onchange="marcarPago('${p.id}', this.checked)">
       </td>
       <td>${fmtData(p.data)}</td>
+      <td>${fmtMesRef(p.mes_referencia)}</td>
       <td><span class="badge badge-${p.usuario}">${p.usuario === 'titular' ? 'Titular' : 'Dependente'}</span></td>
       <td>${escapeHtml(p.categoria)}</td>
       <td>${escapeHtml(p.prestador)}</td>
       <td>${fmtMoney(p.valor_procedimento)}</td>
       <td>${fmtMoney(p.valor_coparticipacao)} <span class="badge badge-${p.pago?'pago':'aberto'}">${p.pago?'Pago':'Em aberto'}</span></td>
       <td>${escapeHtml(p.observacoes || '')}</td>
-      <td><button class="btn-danger-ghost" onclick="removerProcedimento('${p.id}')">Excluir</button></td>
+      <td>
+        <div class="btn-row" style="margin:0;">
+          <button class="btn-ghost" style="padding:5px 10px;font-size:12px;" onclick="editarProcedimento('${p.id}')">Editar</button>
+          <button class="btn-danger-ghost" onclick="removerProcedimento('${p.id}')">Excluir</button>
+        </div>
+      </td>
     </tr>
   `).join('');
 };

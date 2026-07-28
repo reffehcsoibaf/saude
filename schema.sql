@@ -20,6 +20,7 @@ create table if not exists prestadores (
 create table if not exists procedimentos (
   id uuid primary key default gen_random_uuid(),
   data date not null,
+  mes_referencia date,
   usuario text not null check (usuario in ('titular','dependente')),
   categoria text not null,
   prestador text not null,
@@ -30,6 +31,8 @@ create table if not exists procedimentos (
   pago boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+alter table procedimentos add column if not exists mes_referencia date;
 
 -- Agenda ------------------------------------------------------------------
 create table if not exists agenda (

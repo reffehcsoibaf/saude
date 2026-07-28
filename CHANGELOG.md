@@ -3,6 +3,17 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.4.0
+- Botão **Editar** em cada linha do Histórico: preenche o formulário de Novo procedimento com os dados existentes, muda para o modo edição ("Salvar edição" / "Cancelar edição") e grava como atualização (não cria duplicado).
+- As métricas do Histórico agora somam apenas os **itens filtrados exibidos**, não mais o total geral de todos os registros.
+- Adicionado o card **"Total do procedimento"** nas métricas, mostrando o valor de custo além da coparticipação.
+
+## v2.3.0
+- Novo campo **"Mês de referência"** em Novo procedimento (mês/ano da cobrança no extrato do plano, separado da data do procedimento em si).
+- Coluna "Mês ref." adicionada na tabela do Histórico.
+- Novo filtro por mês de referência na aba Histórico.
+- Adicionada coluna `mes_referencia` na tabela `procedimentos` (migração incluída no `schema.sql`, segura para rodar de novo).
+
 ## v2.2.0
 - Adicionado filtro na aba **Agenda**: por data, categoria, prestador, status (agendado/realizado) e busca livre.
 - Adicionado filtro na aba **Documentos**: busca livre (nome do arquivo, descrição, categoria do agendamento vinculado) e filtro por vínculo (vinculado a um agendamento ou avulso).
