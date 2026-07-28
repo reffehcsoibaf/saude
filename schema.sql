@@ -56,6 +56,12 @@ create table if not exists documentos (
 -- Storage: crie manualmente um bucket chamado "documentos" (privado)
 -- em Storage > New bucket no painel do Supabase.
 
+-- Permissões de tabela (GRANT) -----------------------------------------------
+-- O RLS controla QUAIS linhas cada policy libera, mas o Postgres também exige
+-- permissão de acesso à tabela em si. Sem isso dá "permission denied for table".
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on categorias, prestadores, procedimentos, agenda, documentos to authenticated;
+
 -- RLS -----------------------------------------------------------------------
 -- Este app agora exige login (Supabase Auth). Só usuários autenticados
 -- conseguem ler e gravar. Crie o(s) usuário(s) em Authentication > Users
@@ -71,6 +77,11 @@ drop policy if exists "anon full access" on prestadores;
 drop policy if exists "anon full access" on procedimentos;
 drop policy if exists "anon full access" on agenda;
 drop policy if exists "anon full access" on documentos;
+drop policy if exists "authenticated full access" on categorias;
+drop policy if exists "authenticated full access" on prestadores;
+drop policy if exists "authenticated full access" on procedimentos;
+drop policy if exists "authenticated full access" on agenda;
+drop policy if exists "authenticated full access" on documentos;
 
 create policy "authenticated full access" on categorias for all
   using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');

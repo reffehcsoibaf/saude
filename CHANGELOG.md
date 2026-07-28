@@ -3,6 +3,11 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.1.1
+- Corrigido "permission denied for table documentos" (e possíveis erros semelhantes nas outras tabelas): faltavam os `GRANT` de tabela para o role `authenticated` — o RLS por si só não é suficiente, o Postgres também exige a permissão de acesso à tabela.
+- Mensagens de erro agora ficam fixas na tela até serem fechadas, com `role="alert"` (leitura imediata por leitor de tela) e botão "Copiar mensagem".
+- Removida a repetição de "Logado como e-mail" — mostrado uma vez no topo, sem instrução de login ficar aparecendo depois de autenticado.
+
 ## v2.1.0
 - Adicionada tela de login (Supabase Auth, e-mail e senha) — o app não abre mais sem autenticação.
 - Políticas de acesso (RLS) das tabelas alteradas de "acesso anônimo" para "somente usuários autenticados".
