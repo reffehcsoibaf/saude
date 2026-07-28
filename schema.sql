@@ -53,25 +53,59 @@ create table if not exists documentos (
   created_at timestamptz not null default now()
 );
 
--- Storage: crie manualmente um bucket chamado "documentos" (pode ser privado)
+-- Storage: crie manualmente um bucket chamado "documentos" (privado)
 -- em Storage > New bucket no painel do Supabase.
 
 -- RLS -----------------------------------------------------------------------
--- Este app usa a chave "publishable" (anon), sem login de usuário.
--- Isso significa que QUALQUER pessoa com a URL do site e a anon key
--- consegue ler e gravar nessas tabelas. Para uso pessoal (URL não divulgada)
--- isso costuma ser aceitável, mas fique ciente do risco.
+-- Este app agora exige login (Supabase Auth). Só usuários autenticados
+-- conseguem ler e gravar. Crie o(s) usuário(s) em Authentication > Users
+-- (não há tela de cadastro público no app).
 alter table categorias enable row level security;
 alter table prestadores enable row level security;
 alter table procedimentos enable row level security;
 alter table agenda enable row level security;
 alter table documentos enable row level security;
 
-create policy "anon full access" on categorias for all using (true) with check (true);
-create policy "anon full access" on prestadores for all using (true) with check (true);
-create policy "anon full access" on procedimentos for all using (true) with check (true);
-create policy "anon full access" on agenda for all using (true) with check (true);
-create policy "anon full access" on documentos for all using (true) with check (true);
+drop policy if exists "anon full access" on categorias;
+drop policy if exists "anon full access" on prestadores;
+drop policy if exists "anon full access" on procedimentos;
+drop policy if exists "anon full access" on agenda;
+drop policy if exists "anon full access" on documentos;
+
+create policy "authenticated full access" on categorias for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "authenticated full access" on prestadores for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "authenticated full access" on procedimentos for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "authenticated full access" on agenda for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "authenticated full access" on documentos for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+-- Políticas do bucket de arquivos (Storage) ----------------------------------
+-- Necessárias para o upload/leitura/remoção de anexos funcionar.
+-- Rode isso depois de criar o bucket "documentos".
+drop policy if exists "authenticated read documentos" on storage.objects;
+drop policy if exists "authenticated upload documentos" on storage.objects;
+drop policy if exists "authenticated update documentos" on storage.objects;
+drop policy if exists "authenticated delete documentos" on storage.objects;
+
+create policy "authenticated read documentos"
+  on storage.objects for select
+  using (bucket_id = 'documentos' and auth.role() = 'authenticated');
+
+create policy "authenticated upload documentos"
+  on storage.objects for insert
+  with check (bucket_id = 'documentos' and auth.role() = 'authenticated');
+
+create policy "authenticated update documentos"
+  on storage.objects for update
+  using (bucket_id = 'documentos' and auth.role() = 'authenticated');
+
+create policy "authenticated delete documentos"
+  on storage.objects for delete
+  using (bucket_id = 'documentos' and auth.role() = 'authenticated');
 
 -- Categorias sugeridas (pode editar/apagar depois pela aba Configurações)
 insert into categorias (nome) values

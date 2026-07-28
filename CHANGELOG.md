@@ -3,6 +3,12 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.1.0
+- Adicionada tela de login (Supabase Auth, e-mail e senha) — o app não abre mais sem autenticação.
+- Políticas de acesso (RLS) das tabelas alteradas de "acesso anônimo" para "somente usuários autenticados".
+- Adicionadas políticas de Storage para o bucket `documentos` (leitura, upload, edição e remoção), corrigindo o erro de permissão negada ao anexar arquivos.
+- Botão "Sair" para encerrar a sessão.
+
 ## v2.0.0
 - Migração completa de armazenamento local para **Supabase** (Postgres + Storage).
 - App reorganizado em **5 abas** com navegação por teclado (Alt+1 a Alt+5): Novo procedimento, Histórico, Agenda, Documentos, Configurações.

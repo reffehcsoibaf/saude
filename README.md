@@ -4,11 +4,12 @@ App estático (`index.html`) que se conecta direto ao Supabase pelo navegador. N
 
 ## 1. Configurar o Supabase
 
-1. No painel do projeto `hgvupkekywqezimctzri`, abra **SQL Editor** e rode o conteúdo de `schema.sql`.
-2. Vá em **Storage > New bucket** e crie um bucket chamado `documentos` (pode ser privado — o app usa signed URLs para abrir os arquivos).
-3. Confira em **Project Settings > API** se a chave usada no `index.html` (`sb_publishable_...`) continua sendo a chave pública (anon) do projeto.
+1. No painel do projeto `hgvupkekywqezimctzri`, abra **SQL Editor** e rode o conteúdo de `schema.sql` (pode rodar de novo mesmo que já tenha rodado antes — os comandos são seguros para reexecutar).
+2. Vá em **Storage > New bucket** e crie um bucket chamado `documentos` (privado).
+3. Vá em **Authentication > Users > Add user** e crie seu usuário (e-mail e senha) — é com ele que você vai logar no app. Não existe tela de cadastro público.
+4. Confira em **Project Settings > API** se a chave usada no `index.html` (`sb_publishable_...`) continua sendo a chave pública (anon) do projeto.
 
-⚠️ Como o app usa a chave anônima sem login, qualquer pessoa com a URL do site consegue ler e gravar os dados. Para uso pessoal com a URL não divulgada isso é aceitável, mas vale ter isso em mente.
+Agora o acesso exige login: as tabelas e o bucket só aceitam leitura/gravação de usuários autenticados.
 
 ## 2. Publicar no GitHub
 

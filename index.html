@@ -76,9 +76,29 @@
 <a class="skip-link" href="#conteudo-principal">Pular para o conteúdo principal</a>
 <div class="wrap">
   <h1>Controle do plano de saúde</h1>
-  <p class="sub">Uso do plano empresarial: consultas, exames, agenda e documentos. Atalhos: Alt+1 a Alt+5 trocam de aba.</p>
+  <p class="sub">Uso do plano empresarial: consultas, exames, agenda e documentos. Faça login para acessar.</p>
 
   <div id="global-status" class="status-msg hidden" role="status" aria-live="polite"></div>
+
+  <section id="tela-login" class="panel" style="max-width:360px;margin:60px auto 0;">
+    <h2>Entrar</h2>
+    <form id="form-login" onsubmit="return false;">
+      <div style="margin-bottom:10px;">
+        <label for="login-email">E-mail</label>
+        <input type="email" id="login-email" autocomplete="username" required>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label for="login-senha">Senha</label>
+        <input type="password" id="login-senha" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;" onclick="fazerLogin()">Entrar</button>
+    </form>
+  </section>
+
+  <div id="app-conteudo" class="hidden">
+  <div class="btn-row" style="justify-content:flex-end;margin-bottom:10px;">
+    <button class="btn-ghost" onclick="fazerLogout()">Sair</button>
+  </div>
 
   <nav role="tablist" aria-label="Seções do aplicativo">
     <button class="tab-btn" role="tab" id="tab-btn-novo" aria-controls="tab-novo" aria-selected="true" accesskey="1" onclick="showTab('novo')">Novo procedimento</button>
@@ -333,7 +353,8 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.0.0</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.1.0</div>
+  </div>
 </div>
 
 <script type="module">
@@ -364,6 +385,32 @@ function showStatus(msg, type){
 }
 
 const tabs = ['novo','historico','agenda','documentos','config'];
+
+window.fazerLogin = async function(){
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+  if(error){ showStatus('Erro ao entrar: ' + error.message, 'error'); return; }
+  await entrarNoApp();
+};
+
+window.fazerLogout = async function(){
+  await supabase.auth.signOut();
+  document.getElementById('app-conteudo').classList.add('hidden');
+  document.getElementById('tela-login').classList.remove('hidden');
+  document.getElementById('login-senha').value = '';
+};
+
+async function entrarNoApp(){
+  document.getElementById('tela-login').classList.add('hidden');
+  document.getElementById('app-conteudo').classList.remove('hidden');
+  await carregarListas();
+  await carregarProcedimentos();
+  await carregarAgenda();
+  await carregarDocumentos();
+  updateCopart();
+}
+
 window.showTab = function(name){
   tabs.forEach(t => {
     const panel = document.getElementById('tab-' + t);
@@ -737,11 +784,10 @@ window.importarBackup = async function(ev){
 };
 
 window.addEventListener('DOMContentLoaded', async () => {
-  await carregarListas();
-  await carregarProcedimentos();
-  await carregarAgenda();
-  await carregarDocumentos();
-  updateCopart();
+  const { data } = await supabase.auth.getSession();
+  if(data.session){
+    await entrarNoApp();
+  }
 });
 </script>
 </body>
