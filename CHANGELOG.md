@@ -3,6 +3,9 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.5.1
+- Campo "Usuário" (titular/dependente) também passou a ser lembrado entre lançamentos na mesma seção do navegador, junto com data, mês de referência, categoria e prestador.
+
 ## v2.5.0
 - Data, mês de referência, categoria e prestador do formulário de Novo procedimento agora são lembrados entre lançamentos, enquanto a aba do navegador continuar aberta (usa `sessionStorage`).
 - Novo campo de **anexo** na aba Novo procedimento: o documento enviado junto fica vinculado ao procedimento gravado.
