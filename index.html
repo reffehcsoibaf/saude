@@ -78,7 +78,13 @@
   <h1>Controle do plano de saúde</h1>
   <p class="sub" id="intro-texto">Uso do plano empresarial: consultas, exames, agenda e documentos.</p>
 
-  <div id="global-status" class="status-msg hidden" role="status" aria-live="polite"></div>
+  <div id="global-status" class="status-msg hidden" role="status" aria-live="polite">
+    <span id="global-status-texto"></span>
+    <span id="global-status-acoes" class="btn-row hidden" style="margin-top:8px;">
+      <button type="button" class="btn-ghost" onclick="copiarStatus()">Copiar mensagem</button>
+      <button type="button" class="btn-ghost" onclick="fecharStatus()">Fechar</button>
+    </span>
+  </div>
 
   <section id="tela-login" class="panel" style="max-width:360px;margin:60px auto 0;">
     <h2>Entrar</h2>
@@ -378,12 +384,39 @@ function fmtDataHora(iso){ if(!iso) return ''; const dt = new Date(iso); return 
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 function showStatus(msg, type){
   const el = document.getElementById('global-status');
-  el.textContent = msg;
+  const texto = document.getElementById('global-status-texto');
+  const acoes = document.getElementById('global-status-acoes');
+  clearTimeout(showStatus._t);
+
+  texto.textContent = msg;
   el.className = 'status-msg ' + (type || 'ok');
   el.classList.remove('hidden');
-  clearTimeout(showStatus._t);
-  showStatus._t = setTimeout(()=> el.classList.add('hidden'), 5000);
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+
+  if(type === 'error'){
+    acoes.classList.remove('hidden');
+    el.setAttribute('tabindex', '-1');
+    el.focus();
+  } else {
+    acoes.classList.add('hidden');
+    showStatus._t = setTimeout(()=> el.classList.add('hidden'), 5000);
+  }
 }
+
+window.fecharStatus = function(){
+  document.getElementById('global-status').classList.add('hidden');
+};
+
+window.copiarStatus = async function(){
+  const texto = document.getElementById('global-status-texto').textContent;
+  try{
+    await navigator.clipboard.writeText(texto);
+    showStatus('Mensagem copiada: ' + texto, 'ok');
+  }catch(e){
+    alert(texto);
+  }
+};
 
 const tabs = ['novo','historico','agenda','documentos','config'];
 
