@@ -292,6 +292,39 @@
     </div>
 
     <div class="panel">
+      <h2>Filtro</h2>
+      <div class="row4">
+        <div>
+          <label for="ag-data">Data</label>
+          <input type="date" id="ag-data" onchange="renderAgenda()">
+        </div>
+        <div>
+          <label for="ag-categoria">Categoria</label>
+          <select id="ag-categoria" onchange="renderAgenda()"><option value="">Todas</option></select>
+        </div>
+        <div>
+          <label for="ag-prestador">Prestador</label>
+          <select id="ag-prestador" onchange="renderAgenda()"><option value="">Todos</option></select>
+        </div>
+        <div>
+          <label for="ag-status">Status</label>
+          <select id="ag-status" onchange="renderAgenda()">
+            <option value="">Todos</option>
+            <option value="agendado">Agendado</option>
+            <option value="realizado">Realizado</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="ag-busca">Buscar</label>
+          <input type="text" id="ag-busca" oninput="renderAgenda()">
+        </div>
+      </div>
+      <button class="btn-ghost" onclick="limparFiltrosAgenda()">Limpar filtros</button>
+    </div>
+
+    <div class="panel">
       <h2>Agendamentos</h2>
       <div style="overflow-x:auto;">
       <table>
@@ -329,6 +362,24 @@
       <button class="btn-primary" onclick="salvarDocumento()">Adicionar documento</button>
     </div>
     <div class="panel">
+      <h2>Filtro</h2>
+      <div class="row">
+        <div>
+          <label for="d-busca">Buscar</label>
+          <input type="text" id="d-busca" oninput="renderDocumentos()">
+        </div>
+        <div>
+          <label for="d-vinculo">Vínculo</label>
+          <select id="d-vinculo" onchange="renderDocumentos()">
+            <option value="">Todos</option>
+            <option value="agenda">Vinculado a um agendamento</option>
+            <option value="avulso">Avulso</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-ghost" onclick="limparFiltrosDocumentos()">Limpar filtros</button>
+    </div>
+    <div class="panel">
       <h2>Arquivos guardados</h2>
       <div class="doc-list" id="doc-list"></div>
     </div>
@@ -360,7 +411,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.1.2</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.2.0</div>
   </div>
 </div>
 
@@ -468,9 +519,11 @@ async function carregarListas(){
   preencherSelect('f-categoria', categorias);
   preencherSelect('a-categoria', categorias);
   preencherSelect('h-categoria', categorias, true);
+  preencherSelect('ag-categoria', categorias, true);
   preencherSelect('f-prestador', prestadores);
   preencherSelect('a-prestador', prestadores);
   preencherSelect('h-prestador', prestadores, true);
+  preencherSelect('ag-prestador', prestadores, true);
   renderConfigLista('config-categorias', categorias, 'categorias');
   renderConfigLista('config-prestadores', prestadores, 'prestadores');
 }
@@ -679,13 +732,37 @@ async function carregarAgenda(){
   renderAgenda();
 }
 
+window.limparFiltrosAgenda = function(){
+  ['ag-data','ag-categoria','ag-prestador','ag-status','ag-busca'].forEach(id => document.getElementById(id).value = '');
+  renderAgenda();
+};
+
 function renderAgenda(){
+  const fData = document.getElementById('ag-data').value;
+  const fCategoria = document.getElementById('ag-categoria').value;
+  const fPrestador = document.getElementById('ag-prestador').value;
+  const fStatus = document.getElementById('ag-status').value;
+  const fBusca = document.getElementById('ag-busca').value.trim().toLowerCase();
+
+  const filtrados = agendaItens.filter(a => {
+    if(fData && !(a.data_hora || '').startsWith(fData)) return false;
+    if(fCategoria && a.categoria !== fCategoria) return false;
+    if(fPrestador && a.prestador !== fPrestador) return false;
+    if(fStatus === 'agendado' && a.realizado) return false;
+    if(fStatus === 'realizado' && !a.realizado) return false;
+    if(fBusca){
+      const alvo = [a.categoria, a.prestador, a.endereco, a.observacoes].join(' ').toLowerCase();
+      if(!alvo.includes(fBusca)) return false;
+    }
+    return true;
+  });
+
   const body = document.getElementById('agenda-body');
-  if(agendaItens.length === 0){
-    body.innerHTML = `<tr><td colspan="7" class="empty">Nenhum agendamento.</td></tr>`;
+  if(filtrados.length === 0){
+    body.innerHTML = `<tr><td colspan="7" class="empty">Nenhum agendamento encontrado.</td></tr>`;
     return;
   }
-  body.innerHTML = agendaItens.map(a => `
+  body.innerHTML = filtrados.map(a => `
     <tr>
       <td>
         <label class="sr-only" for="real-${a.id}">Marcar agendamento de ${escapeHtml(a.categoria)} como realizado</label>
@@ -753,10 +830,29 @@ async function carregarDocumentos(){
   renderDocumentos();
 }
 
+window.limparFiltrosDocumentos = function(){
+  document.getElementById('d-busca').value = '';
+  document.getElementById('d-vinculo').value = '';
+  renderDocumentos();
+};
+
 function renderDocumentos(){
+  const fBusca = document.getElementById('d-busca').value.trim().toLowerCase();
+  const fVinculo = document.getElementById('d-vinculo').value;
+
+  const filtrados = documentos.filter(d => {
+    if(fVinculo === 'agenda' && !d.agenda) return false;
+    if(fVinculo === 'avulso' && d.agenda) return false;
+    if(fBusca){
+      const alvo = [d.nome_arquivo, d.descricao, d.agenda?.categoria].join(' ').toLowerCase();
+      if(!alvo.includes(fBusca)) return false;
+    }
+    return true;
+  });
+
   const el = document.getElementById('doc-list');
-  if(documentos.length === 0){ el.innerHTML = '<p class="empty">Nenhum documento guardado.</p>'; return; }
-  el.innerHTML = documentos.map(d => `
+  if(filtrados.length === 0){ el.innerHTML = '<p class="empty">Nenhum documento encontrado.</p>'; return; }
+  el.innerHTML = filtrados.map(d => `
     <div class="doc-item">
       <div>
         <div style="font-weight:500;">${escapeHtml(d.nome_arquivo)}</div>

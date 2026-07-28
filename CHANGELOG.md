@@ -3,6 +3,10 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.2.0
+- Adicionado filtro na aba **Agenda**: por data, categoria, prestador, status (agendado/realizado) e busca livre.
+- Adicionado filtro na aba **Documentos**: busca livre (nome do arquivo, descrição, categoria do agendamento vinculado) e filtro por vínculo (vinculado a um agendamento ou avulso).
+
 ## v2.1.2
 - Corrigido bug em que a mensagem "Documento adicionado" (sucesso) aparecia mesmo quando o envio do arquivo falhava por trás — ela sobrescrevia a mensagem de erro real na mesma caixinha antes que desse pra lê-la. Agora o sucesso só é mostrado se o upload de fato funcionou.
 - Mesmo ajuste no anexo enviado pela aba Agenda: se o agendamento for gravado mas o anexo falhar, o aviso deixa isso claro em vez de dizer que deu tudo certo.
