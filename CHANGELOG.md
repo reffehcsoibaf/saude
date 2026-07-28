@@ -3,6 +3,10 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.1.2
+- Corrigido bug em que a mensagem "Documento adicionado" (sucesso) aparecia mesmo quando o envio do arquivo falhava por trás — ela sobrescrevia a mensagem de erro real na mesma caixinha antes que desse pra lê-la. Agora o sucesso só é mostrado se o upload de fato funcionou.
+- Mesmo ajuste no anexo enviado pela aba Agenda: se o agendamento for gravado mas o anexo falhar, o aviso deixa isso claro em vez de dizer que deu tudo certo.
+
 ## v2.1.1
 - Corrigido "permission denied for table documentos" (e possíveis erros semelhantes nas outras tabelas): faltavam os `GRANT` de tabela para o role `authenticated` — o RLS por si só não é suficiente, o Postgres também exige a permissão de acesso à tabela.
 - Mensagens de erro agora ficam fixas na tela até serem fechadas, com `role="alert"` (leitura imediata por leitor de tela) e botão "Copiar mensagem".

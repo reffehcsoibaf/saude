@@ -360,7 +360,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.1.1</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.1.2</div>
   </div>
 </div>
 
@@ -657,11 +657,16 @@ window.salvarAgenda = async function(){
 
   if(error){ showStatus('Erro ao gravar agendamento: ' + error.message, 'error'); return; }
 
+  let anexoOk = true;
   if(arquivoInput.files[0]){
-    await uploadDocumento(arquivoInput.files[0], `Anexo do agendamento: ${categoria} em ${fmtDataHora(novo.data_hora)}`, novo.id);
+    anexoOk = await uploadDocumento(arquivoInput.files[0], `Anexo do agendamento: ${categoria} em ${fmtDataHora(novo.data_hora)}`, novo.id);
   }
 
-  showStatus('Agendamento gravado.', 'ok');
+  if(anexoOk){
+    showStatus('Agendamento gravado.', 'ok');
+  } else {
+    showStatus('Agendamento gravado, mas o anexo falhou (veja o erro acima).', 'error');
+  }
   window.limparFormAgenda();
   await carregarAgenda();
   await carregarDocumentos();
@@ -716,19 +721,25 @@ async function uploadDocumento(arquivo, descricao, agendaId){
   if(upErr){
     console.error('Falha no upload:', upErr);
     showStatus(`Erro ao enviar arquivo (bucket "${DOC_BUCKET}"): ${upErr.message}`, 'error');
-    return;
+    return false;
   }
   const { error } = await supabase.from('documentos').insert({
     nome_arquivo: arquivo.name, descricao, storage_path: caminho, agenda_id: agendaId || null
   });
-  if(error){ console.error('Falha ao registrar documento:', error); showStatus('Erro ao registrar documento: ' + error.message, 'error'); }
+  if(error){
+    console.error('Falha ao registrar documento:', error);
+    showStatus('Erro ao registrar documento: ' + error.message, 'error');
+    return false;
+  }
+  return true;
 }
 
 window.salvarDocumento = async function(){
   const arquivo = document.getElementById('d-arquivo').files[0];
   const descricao = document.getElementById('d-descricao').value.trim() || null;
   if(!arquivo){ showStatus('Selecione um arquivo.', 'error'); return; }
-  await uploadDocumento(arquivo, descricao, null);
+  const ok = await uploadDocumento(arquivo, descricao, null);
+  if(!ok) return;
   showStatus('Documento adicionado.', 'ok');
   document.getElementById('d-arquivo').value = '';
   document.getElementById('d-descricao').value = '';
