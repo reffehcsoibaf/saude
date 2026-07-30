@@ -266,7 +266,9 @@
 
   <section class="tab-panel" role="tabpanel" id="tab-agenda" aria-labelledby="tab-btn-agenda" hidden>
     <div class="panel">
-      <h2>Novo agendamento</h2>
+      <h2 id="titulo-form-agenda">Novo agendamento</h2>
+      <p class="sub hidden" id="aviso-edicao-agenda">Editando um agendamento existente.</p>
+      <input type="hidden" id="ag-edit-id" value="">
       <div class="row3">
         <div>
           <label for="a-data">Data e hora</label>
@@ -302,8 +304,9 @@
         <textarea id="a-obs" rows="3"></textarea>
       </div>
       <div class="btn-row">
-        <button class="btn-primary" onclick="salvarAgenda()">Gravar agendamento</button>
+        <button class="btn-primary" id="btn-salvar-agenda" onclick="salvarAgenda()">Gravar agendamento</button>
         <button class="btn-ghost" onclick="limparFormAgenda()">Limpar formulário</button>
+        <button class="btn-ghost hidden" id="btn-cancelar-edicao-agenda" onclick="cancelarEdicaoAgenda()">Cancelar edição</button>
       </div>
     </div>
 
@@ -427,7 +430,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.5.1</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.6.0</div>
   </div>
 </div>
 
@@ -563,6 +566,15 @@ window.addListItem = async function(tabela){
   await carregarListas();
 };
 
+window.editarListItem = async function(tabela, id, nomeAtual){
+  const novoNome = prompt('Novo nome:', nomeAtual);
+  if(novoNome === null || !novoNome.trim() || novoNome.trim() === nomeAtual) return;
+  const { error } = await supabase.from(tabela).update({ nome: novoNome.trim() }).eq('id', id);
+  if(error){ showStatus('Erro ao editar: ' + error.message, 'error'); return; }
+  showStatus('Item atualizado.', 'ok');
+  await carregarListas();
+};
+
 window.removerListItem = async function(tabela, id, nome){
   if(!confirm(`Remover "${nome}"? Isso não altera registros já lançados.`)) return;
   const { error } = await supabase.from(tabela).delete().eq('id', id);
@@ -577,7 +589,10 @@ function renderConfigLista(containerId, itens, tabela){
   el.innerHTML = itens.map(i => `
     <div class="config-item">
       <span>${escapeHtml(i.nome)}</span>
-      <button class="btn-danger-ghost" onclick="removerListItem('${tabela}','${i.id}','${escapeHtml(i.nome)}')">Remover</button>
+      <div class="btn-row" style="margin:0;">
+        <button class="btn-ghost" style="padding:5px 10px;font-size:12px;" onclick="editarListItem('${tabela}','${i.id}','${escapeHtml(i.nome)}')">Editar</button>
+        <button class="btn-danger-ghost" onclick="removerListItem('${tabela}','${i.id}','${escapeHtml(i.nome)}')">Remover</button>
+      </div>
     </div>
   `).join('');
 }
@@ -795,9 +810,37 @@ window.removerProcedimento = async function(id){
 window.limparFormAgenda = function(){
   ['a-data','a-endereco','a-obs'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('a-anexo').value = '';
+  window.cancelarEdicaoAgenda();
+};
+
+window.cancelarEdicaoAgenda = function(){
+  document.getElementById('ag-edit-id').value = '';
+  document.getElementById('titulo-form-agenda').textContent = 'Novo agendamento';
+  document.getElementById('aviso-edicao-agenda').classList.add('hidden');
+  document.getElementById('btn-salvar-agenda').textContent = 'Gravar agendamento';
+  document.getElementById('btn-cancelar-edicao-agenda').classList.add('hidden');
+};
+
+window.editarAgenda = function(id){
+  const a = agendaItens.find(x => x.id === id);
+  if(!a) return;
+  document.getElementById('ag-edit-id').value = a.id;
+  document.getElementById('a-data').value = a.data_hora ? a.data_hora.slice(0,16) : '';
+  document.getElementById('a-categoria').value = a.categoria;
+  document.getElementById('a-prestador').value = a.prestador;
+  document.getElementById('a-endereco').value = a.endereco || '';
+  document.getElementById('a-obs').value = a.observacoes || '';
+
+  document.getElementById('titulo-form-agenda').textContent = 'Editar agendamento';
+  document.getElementById('aviso-edicao-agenda').classList.remove('hidden');
+  document.getElementById('btn-salvar-agenda').textContent = 'Salvar edição';
+  document.getElementById('btn-cancelar-edicao-agenda').classList.remove('hidden');
+
+  showTab('agenda');
 };
 
 window.salvarAgenda = async function(){
+  const editId = document.getElementById('ag-edit-id').value;
   const dataHora = document.getElementById('a-data').value;
   const categoria = document.getElementById('a-categoria').value;
   const prestador = document.getElementById('a-prestador').value;
@@ -810,22 +853,28 @@ window.salvarAgenda = async function(){
     return;
   }
 
-  const { data: novo, error } = await supabase.from('agenda').insert({
-    data_hora: new Date(dataHora).toISOString(),
-    categoria, prestador, endereco, observacoes, realizado: false
-  }).select().single();
+  let agendaId = editId || null;
+  const dadosAgenda = { data_hora: new Date(dataHora).toISOString(), categoria, prestador, endereco, observacoes };
 
-  if(error){ showStatus('Erro ao gravar agendamento: ' + error.message, 'error'); return; }
+  if(editId){
+    const { error } = await supabase.from('agenda').update(dadosAgenda).eq('id', editId);
+    if(error){ showStatus('Erro ao salvar edição: ' + error.message, 'error'); return; }
+  } else {
+    dadosAgenda.realizado = false;
+    const { data: novo, error } = await supabase.from('agenda').insert(dadosAgenda).select().single();
+    if(error){ showStatus('Erro ao gravar agendamento: ' + error.message, 'error'); return; }
+    agendaId = novo.id;
+  }
 
   let anexoOk = true;
   if(arquivoInput.files[0]){
-    anexoOk = await uploadDocumento(arquivoInput.files[0], `Anexo do agendamento: ${categoria} em ${fmtDataHora(novo.data_hora)}`, { agendaId: novo.id });
+    anexoOk = await uploadDocumento(arquivoInput.files[0], `Anexo do agendamento: ${categoria} em ${fmtDataHora(dadosAgenda.data_hora)}`, { agendaId });
   }
 
   if(anexoOk){
-    showStatus('Agendamento gravado.', 'ok');
+    showStatus(editId ? 'Edição salva.' : 'Agendamento gravado.', 'ok');
   } else {
-    showStatus('Agendamento gravado, mas o anexo falhou (veja o erro acima).', 'error');
+    showStatus((editId ? 'Edição salva' : 'Agendamento gravado') + ', mas o anexo falhou (veja o erro acima).', 'error');
   }
   window.limparFormAgenda();
   await carregarAgenda();
@@ -880,7 +929,12 @@ function renderAgenda(){
       <td>${escapeHtml(a.prestador)}</td>
       <td>${escapeHtml(a.endereco || '')}</td>
       <td>${escapeHtml(a.observacoes || '')}</td>
-      <td><button class="btn-danger-ghost" onclick="removerAgenda('${a.id}')">Excluir</button></td>
+      <td>
+        <div class="btn-row" style="margin:0;">
+          <button class="btn-ghost" style="padding:5px 10px;font-size:12px;" onclick="editarAgenda('${a.id}')">Editar</button>
+          <button class="btn-danger-ghost" onclick="removerAgenda('${a.id}')">Excluir</button>
+        </div>
+      </td>
     </tr>
   `).join('');
 }
