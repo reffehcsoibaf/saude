@@ -243,7 +243,7 @@
       <h2>Lançamentos</h2>
       <div style="overflow-x:auto;">
       <table>
-        <caption>Lista de procedimentos registrados, com opção de marcar como pago</caption>
+        <caption>Lista de procedimentos registrados</caption>
         <thead>
           <tr>
             <th scope="col"><span class="sr-only">Pago</span></th>
@@ -400,7 +400,19 @@
     </div>
     <div class="panel">
       <h2>Arquivos guardados</h2>
-      <div class="doc-list" id="doc-list"></div>
+      <div style="overflow-x:auto;">
+      <table>
+        <caption>Documentos guardados, com opção de abrir, editar descrição ou remover</caption>
+        <thead>
+          <tr>
+            <th scope="col">Arquivo</th>
+            <th scope="col">Descrição</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody id="doc-list"></tbody>
+      </table>
+      </div>
     </div>
   </section>
 
@@ -430,7 +442,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.6.0</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.7.0</div>
   </div>
 </div>
 
@@ -1018,21 +1030,19 @@ function renderDocumentos(){
   });
 
   const el = document.getElementById('doc-list');
-  if(filtrados.length === 0){ el.innerHTML = '<p class="empty">Nenhum documento encontrado.</p>'; return; }
+  if(filtrados.length === 0){ el.innerHTML = `<tr><td colspan="3" class="empty">Nenhum documento encontrado.</td></tr>`; return; }
   el.innerHTML = filtrados.map(d => `
-    <div class="doc-item">
-      <div>
-        <div style="font-weight:500;">${escapeHtml(d.nome_arquivo)}</div>
-        <div class="sub" style="margin:2px 0 0;">${escapeHtml(d.descricao || 'Sem descrição')}</div>
-        ${d.agenda ? `<div class="sub" style="margin:2px 0 0;">Pertence ao agendamento: ${escapeHtml(d.agenda.categoria)} em ${fmtDataHora(d.agenda.data_hora)}</div>` : ''}
-        ${d.procedimento ? `<div class="sub" style="margin:2px 0 0;">Pertence ao procedimento: ${escapeHtml(d.procedimento.categoria)} em ${fmtData(d.procedimento.data)} (${escapeHtml(d.procedimento.prestador)})</div>` : ''}
-      </div>
-      <div class="btn-row">
-        <button class="btn-ghost" onclick="abrirDocumento('${d.storage_path}')">Abrir</button>
-        <button class="btn-ghost" onclick="editarDescricaoDocumento('${d.id}')">Editar descrição</button>
-        <button class="btn-danger-ghost" onclick="removerDocumento('${d.id}','${d.storage_path}')">Remover</button>
-      </div>
-    </div>
+    <tr>
+      <td>${escapeHtml(d.nome_arquivo)}</td>
+      <td>${escapeHtml(d.descricao || 'Sem descrição')}</td>
+      <td>
+        <div class="btn-row" style="margin:0;">
+          <button class="btn-ghost" style="padding:5px 10px;font-size:12px;" onclick="abrirDocumento('${d.storage_path}')">Abrir</button>
+          <button class="btn-ghost" style="padding:5px 10px;font-size:12px;" onclick="editarDescricaoDocumento('${d.id}')">Editar descrição</button>
+          <button class="btn-danger-ghost" onclick="removerDocumento('${d.id}','${d.storage_path}')">Remover</button>
+        </div>
+      </td>
+    </tr>
   `).join('');
 }
 

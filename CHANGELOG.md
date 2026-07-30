@@ -3,6 +3,10 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.7.0
+- Lista de Documentos passou de cartões para **tabela** (colunas: Arquivo, Descrição, Ações), no mesmo padrão do Histórico e da Agenda.
+- Removida a linha redundante "Pertence ao agendamento/procedimento" — essa informação já está na descrição.
+
 ## v2.6.0
 - Botão **Editar** em cada agendamento na aba Agenda: preenche o formulário com os dados existentes, entra em modo edição ("Salvar edição" / "Cancelar edição") e atualiza o registro em vez de duplicar.
 - Botão **Editar** (renomear) nas listas de Categorias e Prestadores, na aba Configurações.
