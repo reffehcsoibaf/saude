@@ -1002,7 +1002,7 @@ window.salvarDocumento = async function(){
 
 async function carregarDocumentos(){
   const { data, error } = await supabase.from('saude_documentos')
-    .select('*, agenda(categoria, data_hora), procedimento:procedimento_id(categoria, data, prestador)')
+    .select('*, agenda:agenda_id(categoria, data_hora), procedimento:procedimento_id(categoria, data, prestador)')
     .order('created_at', {ascending:false});
   if(error){ showStatus('Erro ao carregar documentos: ' + error.message, 'error'); return; }
   documentos = data || [];
