@@ -449,10 +449,10 @@
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL = 'https://hgvupkekywqezimctzri.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_FCXYWuuHe-SAC7Lx_ueunw_DjaFjPji';
+const SUPABASE_URL = 'https://zlclakzjktpsbpfkltxa.supabase.co'; // projeto Hub
+const SUPABASE_KEY = 'sb_publishable_o5Rn3Qp_C3boiYCRqQ5Ykw_2sNd3KiQ'; // Project Settings > API > anon/public
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-const DOC_BUCKET = 'documentos';
+const DOC_BUCKET = 'documentos_saude';
 
 let categorias = [];
 let prestadores = [];
@@ -544,8 +544,8 @@ window.showTab = function(name){
 
 async function carregarListas(){
   const [cat, pre] = await Promise.all([
-    supabase.from('categorias').select('*').order('nome'),
-    supabase.from('prestadores').select('*').order('nome')
+    supabase.from('saude_categorias').select('*').order('nome'),
+    supabase.from('saude_prestadores').select('*').order('nome')
   ]);
   categorias = cat.data || [];
   prestadores = pre.data || [];
@@ -695,11 +695,11 @@ window.salvarProcedimento = async function(){
   let procedimentoId = editId || null;
 
   if(editId){
-    const { error } = await supabase.from('procedimentos').update(registro).eq('id', editId);
+    const { error } = await supabase.from('saude_procedimentos').update(registro).eq('id', editId);
     if(error){ showStatus('Erro ao salvar edição: ' + error.message, 'error'); return; }
   } else {
     registro.pago = false;
-    const { data: novo, error } = await supabase.from('procedimentos').insert(registro).select().single();
+    const { data: novo, error } = await supabase.from('saude_procedimentos').insert(registro).select().single();
     if(error){ showStatus('Erro ao gravar: ' + error.message, 'error'); return; }
     procedimentoId = novo.id;
   }
@@ -726,7 +726,7 @@ window.salvarProcedimento = async function(){
 };
 
 async function carregarProcedimentos(){
-  const { data, error } = await supabase.from('procedimentos').select('*').order('data', {ascending:false});
+  const { data, error } = await supabase.from('saude_procedimentos').select('*').order('data', {ascending:false});
   if(error){ showStatus('Erro ao carregar histórico: ' + error.message, 'error'); return; }
   procedimentos = data || [];
   renderHistorico();
@@ -805,7 +805,7 @@ window.renderHistorico = function(){
 };
 
 window.marcarPago = async function(id, pago){
-  const { error } = await supabase.from('procedimentos').update({ pago }).eq('id', id);
+  const { error } = await supabase.from('saude_procedimentos').update({ pago }).eq('id', id);
   if(error){ showStatus('Erro ao atualizar: ' + error.message, 'error'); return; }
   const item = procedimentos.find(p => p.id === id);
   if(item) item.pago = pago;
@@ -814,7 +814,7 @@ window.marcarPago = async function(id, pago){
 
 window.removerProcedimento = async function(id){
   if(!confirm('Excluir este registro?')) return;
-  const { error } = await supabase.from('procedimentos').delete().eq('id', id);
+  const { error } = await supabase.from('saude_procedimentos').delete().eq('id', id);
   if(error){ showStatus('Erro ao excluir: ' + error.message, 'error'); return; }
   await carregarProcedimentos();
 };
@@ -869,11 +869,11 @@ window.salvarAgenda = async function(){
   const dadosAgenda = { data_hora: new Date(dataHora).toISOString(), categoria, prestador, endereco, observacoes };
 
   if(editId){
-    const { error } = await supabase.from('agenda').update(dadosAgenda).eq('id', editId);
+    const { error } = await supabase.from('saude_agenda').update(dadosAgenda).eq('id', editId);
     if(error){ showStatus('Erro ao salvar edição: ' + error.message, 'error'); return; }
   } else {
     dadosAgenda.realizado = false;
-    const { data: novo, error } = await supabase.from('agenda').insert(dadosAgenda).select().single();
+    const { data: novo, error } = await supabase.from('saude_agenda').insert(dadosAgenda).select().single();
     if(error){ showStatus('Erro ao gravar agendamento: ' + error.message, 'error'); return; }
     agendaId = novo.id;
   }
@@ -894,7 +894,7 @@ window.salvarAgenda = async function(){
 };
 
 async function carregarAgenda(){
-  const { data, error } = await supabase.from('agenda').select('*').order('data_hora', {ascending:true});
+  const { data, error } = await supabase.from('saude_agenda').select('*').order('data_hora', {ascending:true});
   if(error){ showStatus('Erro ao carregar agenda: ' + error.message, 'error'); return; }
   agendaItens = data || [];
   renderAgenda();
@@ -952,7 +952,7 @@ function renderAgenda(){
 }
 
 window.marcarRealizado = async function(id, realizado){
-  const { error } = await supabase.from('agenda').update({ realizado }).eq('id', id);
+  const { error } = await supabase.from('saude_agenda').update({ realizado }).eq('id', id);
   if(error){ showStatus('Erro ao atualizar: ' + error.message, 'error'); return; }
   const item = agendaItens.find(a => a.id === id);
   if(item) item.realizado = realizado;
@@ -960,21 +960,22 @@ window.marcarRealizado = async function(id, realizado){
 
 window.removerAgenda = async function(id){
   if(!confirm('Excluir este agendamento?')) return;
-  const { error } = await supabase.from('agenda').delete().eq('id', id);
+  const { error } = await supabase.from('saude_agenda').delete().eq('id', id);
   if(error){ showStatus('Erro ao excluir: ' + error.message, 'error'); return; }
   await carregarAgenda();
 };
 
 async function uploadDocumento(arquivo, descricao, vinculo){
   vinculo = vinculo || {};
-  const caminho = `${Date.now()}_${arquivo.name}`;
+  const { data: userData } = await supabase.auth.getUser();
+  const caminho = `${userData.user.id}/${Date.now()}_${arquivo.name}`;
   const { error: upErr } = await supabase.storage.from(DOC_BUCKET).upload(caminho, arquivo);
   if(upErr){
     console.error('Falha no upload:', upErr);
     showStatus(`Erro ao enviar arquivo (bucket "${DOC_BUCKET}"): ${upErr.message}`, 'error');
     return false;
   }
-  const { error } = await supabase.from('documentos').insert({
+  const { error } = await supabase.from('saude_documentos').insert({
     nome_arquivo: arquivo.name, descricao, storage_path: caminho,
     agenda_id: vinculo.agendaId || null,
     procedimento_id: vinculo.procedimentoId || null
@@ -1000,7 +1001,7 @@ window.salvarDocumento = async function(){
 };
 
 async function carregarDocumentos(){
-  const { data, error } = await supabase.from('documentos')
+  const { data, error } = await supabase.from('saude_documentos')
     .select('*, agenda(categoria, data_hora), procedimento:procedimento_id(categoria, data, prestador)')
     .order('created_at', {ascending:false});
   if(error){ showStatus('Erro ao carregar documentos: ' + error.message, 'error'); return; }
@@ -1056,7 +1057,7 @@ window.editarDescricaoDocumento = async function(id){
   const atual = documentos.find(d => d.id === id);
   const nova = prompt('Nova descrição:', atual ? atual.descricao || '' : '');
   if(nova === null) return;
-  const { error } = await supabase.from('documentos').update({ descricao: nova }).eq('id', id);
+  const { error } = await supabase.from('saude_documentos').update({ descricao: nova }).eq('id', id);
   if(error){ showStatus('Erro ao atualizar: ' + error.message, 'error'); return; }
   await carregarDocumentos();
 };
@@ -1064,7 +1065,7 @@ window.editarDescricaoDocumento = async function(id){
 window.removerDocumento = async function(id, caminho){
   if(!confirm('Remover este documento?')) return;
   await supabase.storage.from(DOC_BUCKET).remove([caminho]);
-  const { error } = await supabase.from('documentos').delete().eq('id', id);
+  const { error } = await supabase.from('saude_documentos').delete().eq('id', id);
   if(error){ showStatus('Erro ao remover: ' + error.message, 'error'); return; }
   await carregarDocumentos();
 };
@@ -1097,10 +1098,10 @@ window.importarBackup = async function(ev){
     if(error) showStatus(`Erro ao importar ${nome}: ${error.message}`, 'error');
   }
 
-  await importarAba('procedimentos', 'procedimentos');
-  await importarAba('agenda', 'agenda');
-  await importarAba('categorias', 'categorias');
-  await importarAba('prestadores', 'prestadores');
+  await importarAba('procedimentos', 'saude_procedimentos');
+  await importarAba('agenda', 'saude_agenda');
+  await importarAba('categorias', 'saude_categorias');
+  await importarAba('prestadores', 'saude_prestadores');
 
   showStatus('Importação concluída.', 'ok');
   ev.target.value = '';
