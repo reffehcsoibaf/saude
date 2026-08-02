@@ -3,6 +3,11 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.8.0
+- Botão **Gravar registro / Salvar edição** ganhou atalho `Alt+S`, funcionando mesmo com o foco em qualquer campo do formulário.
+- Corrigida uma falha em `showStatus()`: a mensagem de confirmação (ex. "Registro gravado.") era escrita na região `aria-live` antes dela ficar visível, o que podia fazer o NVDA não anunciar o sucesso do lançamento mesmo tendo sido gravado.
+- Removido texto redundante na introdução ("Uso do plano empresarial:") e nas legendas das tabelas de Agenda e Documentos, que apenas descreviam funcionalidades já visíveis nos próprios botões/caixas de verificação.
+
 ## v2.7.0
 - Lista de Documentos passou de cartões para **tabela** (colunas: Arquivo, Descrição, Ações), no mesmo padrão do Histórico e da Agenda.
 - Removida a linha redundante "Pertence ao agendamento/procedimento" — essa informação já está na descrição.
