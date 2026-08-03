@@ -76,7 +76,7 @@
 <a class="skip-link" href="#conteudo-principal">Pular para o conteúdo principal</a>
 <div class="wrap">
   <h1>Controle do plano de saúde</h1>
-  <p class="sub" id="intro-texto">Consultas, exames, agenda e documentos.</p>
+  <p class="sub" id="intro-texto">Uso do plano empresarial: consultas, exames, agenda e documentos.</p>
 
   <div id="global-status" class="status-msg hidden" role="status" aria-live="polite">
     <span id="global-status-texto"></span>
@@ -183,7 +183,7 @@
           <input type="file" id="f-anexo">
         </div>
         <div class="btn-row">
-          <button type="submit" class="btn-primary" id="btn-salvar-novo" accesskey="s" onclick="salvarProcedimento()">Gravar registro</button>
+          <button type="submit" class="btn-primary" id="btn-salvar-novo" onclick="salvarProcedimento()">Gravar registro</button>
           <button type="button" class="btn-ghost" onclick="limparFormNovo()">Limpar formulário</button>
           <button type="button" class="btn-ghost hidden" id="btn-cancelar-edicao" onclick="cancelarEdicao()">Cancelar edição</button>
         </div>
@@ -347,7 +347,7 @@
       <h2>Agendamentos</h2>
       <div style="overflow-x:auto;">
       <table>
-        <caption>Consultas e exames agendados</caption>
+        <caption>Consultas e exames agendados, com opção de marcar como realizado</caption>
         <thead>
           <tr>
             <th scope="col"><span class="sr-only">Realizado</span></th>
@@ -402,7 +402,7 @@
       <h2>Arquivos guardados</h2>
       <div style="overflow-x:auto;">
       <table>
-        <caption>Documentos guardados</caption>
+        <caption>Documentos guardados, com opção de abrir, editar descrição ou remover</caption>
         <thead>
           <tr>
             <th scope="col">Arquivo</th>
@@ -442,7 +442,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.8.0</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.7.0</div>
   </div>
 </div>
 
@@ -471,12 +471,11 @@ function showStatus(msg, type){
   const acoes = document.getElementById('global-status-acoes');
   clearTimeout(showStatus._t);
 
-  texto.textContent = '';
+  texto.textContent = msg;
   el.className = 'status-msg ' + (type || 'ok');
   el.classList.remove('hidden');
   el.setAttribute('role', type === 'error' ? 'alert' : 'status');
   el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
-  requestAnimationFrame(() => { texto.textContent = msg; });
 
   if(type === 'error'){
     acoes.classList.remove('hidden');
@@ -520,6 +519,12 @@ window.fazerLogout = async function(){
 };
 
 async function entrarNoApp(email){
+  const habilitado = await moduloEstaHabilitado('saude');
+  if (!habilitado) {
+    await supabase.auth.signOut();
+    showStatus('Seu acesso a este módulo está desativado. Fale com o administrador.', 'error');
+    return;
+  }
   document.getElementById('tela-login').classList.add('hidden');
   document.getElementById('app-conteudo').classList.remove('hidden');
   document.getElementById('usuario-logado').textContent = email ? `Logado como ${email}` : '';
@@ -529,6 +534,23 @@ async function entrarNoApp(email){
   await carregarAgenda();
   await carregarDocumentos();
   updateCopart();
+}
+
+// Confere se o usuário logado está com este módulo habilitado em
+// profiles_modulos. A garantia de segurança de verdade está no RLS do
+// banco (o Postgres bloqueia mesmo que este código seja contornado);
+// isto aqui é só para dar uma mensagem clara em vez de erros confusos.
+async function moduloEstaHabilitado(modulo) {
+  const { data: sessao } = await supabase.auth.getSession();
+  if (!sessao.session) return false;
+  const { data, error } = await supabase
+    .from('profiles_modulos')
+    .select('habilitado')
+    .eq('user_id', sessao.session.user.id)
+    .eq('modulo', modulo)
+    .maybeSingle();
+  if (error || !data) return false;
+  return data.habilitado === true;
 }
 
 window.showTab = function(name){
