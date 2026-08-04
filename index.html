@@ -85,6 +85,7 @@
       <button type="button" class="btn-ghost" onclick="fecharStatus()">Fechar</button>
     </span>
   </div>
+  <div id="sr-anuncio-status" class="sr-only" role="status" aria-live="polite"></div>
 
   <section id="tela-login" class="panel" style="max-width:360px;margin:60px auto 0;">
     <h2>Entrar</h2>
@@ -183,7 +184,7 @@
           <input type="file" id="f-anexo">
         </div>
         <div class="btn-row">
-          <button type="submit" class="btn-primary" id="btn-salvar-novo" accesskey="s" onclick="salvarProcedimento()">Gravar registro</button>
+          <button type="submit" class="btn-primary" id="btn-salvar-novo" onclick="salvarProcedimento()">Gravar registro</button>
           <button type="button" class="btn-ghost" onclick="limparFormNovo()">Limpar formulário</button>
           <button type="button" class="btn-ghost hidden" id="btn-cancelar-edicao" onclick="cancelarEdicao()">Cancelar edição</button>
         </div>
@@ -471,20 +472,30 @@ function showStatus(msg, type){
   const acoes = document.getElementById('global-status-acoes');
   clearTimeout(showStatus._t);
 
-  texto.textContent = '';
+  texto.textContent = msg;
   el.className = 'status-msg ' + (type || 'ok');
   el.classList.remove('hidden');
-  el.setAttribute('role', type === 'error' ? 'alert' : 'status');
-  el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
-  requestAnimationFrame(() => { texto.textContent = msg; });
 
   if(type === 'error'){
+    el.setAttribute('role', 'alert');
+    el.setAttribute('aria-live', 'assertive');
     acoes.classList.remove('hidden');
     el.setAttribute('tabindex', '-1');
     el.focus();
   } else {
+    // Essa caixa visual às vezes fica escondida (display:none) bem na hora
+    // em que o texto muda, e o NVDA acaba não percebendo a mudança. Por
+    // isso o sucesso é anunciado por uma região separada que nunca fica
+    // com display:none — só ela garante o anúncio de forma confiável.
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
     acoes.classList.add('hidden');
     showStatus._t = setTimeout(()=> el.classList.add('hidden'), 5000);
+
+    const anunciador = document.getElementById('sr-anuncio-status');
+    anunciador.textContent = '';
+    clearTimeout(showStatus._ta);
+    showStatus._ta = setTimeout(() => { anunciador.textContent = msg; }, 50);
   }
 }
 
@@ -520,6 +531,12 @@ window.fazerLogout = async function(){
 };
 
 async function entrarNoApp(email){
+  const habilitado = await moduloEstaHabilitado('saude');
+  if (!habilitado) {
+    await supabase.auth.signOut();
+    showStatus('Seu acesso a este módulo está desativado. Fale com o administrador.', 'error');
+    return;
+  }
   document.getElementById('tela-login').classList.add('hidden');
   document.getElementById('app-conteudo').classList.remove('hidden');
   document.getElementById('usuario-logado').textContent = email ? `Logado como ${email}` : '';
@@ -529,6 +546,23 @@ async function entrarNoApp(email){
   await carregarAgenda();
   await carregarDocumentos();
   updateCopart();
+}
+
+// Confere se o usuário logado está com este módulo habilitado em
+// profiles_modulos. A garantia de segurança de verdade está no RLS do
+// banco (o Postgres bloqueia mesmo que este código seja contornado);
+// isto aqui é só para dar uma mensagem clara em vez de erros confusos.
+async function moduloEstaHabilitado(modulo) {
+  const { data: sessao } = await supabase.auth.getSession();
+  if (!sessao.session) return false;
+  const { data, error } = await supabase
+    .from('profiles_modulos')
+    .select('habilitado')
+    .eq('user_id', sessao.session.user.id)
+    .eq('modulo', modulo)
+    .maybeSingle();
+  if (error || !data) return false;
+  return data.habilitado === true;
 }
 
 window.showTab = function(name){
@@ -573,7 +607,7 @@ function preencherSelect(id, itens, comTodos){
 window.addListItem = async function(tabela){
   const nome = prompt(tabela === 'categorias' ? 'Nome da nova categoria:' : 'Nome do novo prestador:');
   if(!nome || !nome.trim()) return;
-  const { error } = await supabase.from(tabela).insert({ nome: nome.trim() });
+  const { error } = await supabase.from('saude_' + tabela).insert({ nome: nome.trim() });
   if(error){ showStatus('Erro ao adicionar: ' + error.message, 'error'); return; }
   showStatus('Item adicionado.', 'ok');
   await carregarListas();
@@ -582,7 +616,7 @@ window.addListItem = async function(tabela){
 window.editarListItem = async function(tabela, id, nomeAtual){
   const novoNome = prompt('Novo nome:', nomeAtual);
   if(novoNome === null || !novoNome.trim() || novoNome.trim() === nomeAtual) return;
-  const { error } = await supabase.from(tabela).update({ nome: novoNome.trim() }).eq('id', id);
+  const { error } = await supabase.from('saude_' + tabela).update({ nome: novoNome.trim() }).eq('id', id);
   if(error){ showStatus('Erro ao editar: ' + error.message, 'error'); return; }
   showStatus('Item atualizado.', 'ok');
   await carregarListas();
@@ -590,7 +624,7 @@ window.editarListItem = async function(tabela, id, nomeAtual){
 
 window.removerListItem = async function(tabela, id, nome){
   if(!confirm(`Remover "${nome}"? Isso não altera registros já lançados.`)) return;
-  const { error } = await supabase.from(tabela).delete().eq('id', id);
+  const { error } = await supabase.from('saude_' + tabela).delete().eq('id', id);
   if(error){ showStatus('Erro ao remover: ' + error.message, 'error'); return; }
   showStatus('Item removido.', 'ok');
   await carregarListas();
@@ -1108,6 +1142,19 @@ window.importarBackup = async function(ev){
   ev.target.value = '';
   await Promise.all([carregarListas(), carregarProcedimentos(), carregarAgenda()]);
 };
+
+// Atalho Alt+S para gravar/salvar edição, sem mover o foco (diferente de
+// accesskey, que sempre move o foco pro elemento antes de "clicar" nele).
+// Só age quando a aba "Novo procedimento" está visível.
+document.addEventListener('keydown', function(e){
+  if(!e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.repeat) return;
+  if(e.key !== 's' && e.key !== 'S') return;
+  const secaoNovo = document.getElementById('tab-novo');
+  if(secaoNovo && !secaoNovo.hidden){
+    e.preventDefault();
+    salvarProcedimento();
+  }
+});
 
 window.addEventListener('DOMContentLoaded', async () => {
   // Chegando do Hub? Consome o token de sessão embutido na URL (via #)

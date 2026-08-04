@@ -8,6 +8,12 @@ Formato de versão: MAJOR.MINOR.PATCH.
 - Corrigida uma falha em `showStatus()`: a mensagem de confirmação (ex. "Registro gravado.") era escrita na região `aria-live` antes dela ficar visível, o que podia fazer o NVDA não anunciar o sucesso do lançamento mesmo tendo sido gravado.
 - Removido texto redundante na introdução ("Uso do plano empresarial:") e nas legendas das tabelas de Agenda e Documentos, que apenas descreviam funcionalidades já visíveis nos próprios botões/caixas de verificação.
 
+### Correções (mesma versão, sem funcionalidade nova)
+- Reaplicada a checagem de módulo habilitado (`profiles_modulos`) em `entrarNoApp()`, perdida numa regressão acidental para a base da v2.7.0.
+- Corrigido erro "Could not find the table 'public.prestadores'" ao adicionar/editar/remover categoria ou prestador: essas três funções chamavam `supabase.from(tabela)` sem o prefixo `saude_` usado em todo o resto do app.
+- Trocado `accesskey="s"` por um atalho `Alt+S` via `keydown`: o `accesskey` sempre move o foco do leitor de tela para o botão antes de ativá-lo; o novo atalho grava sem mover o foco.
+- O anúncio de sucesso ("Registro gravado." / "Edição salva.") ainda não estava sendo lido pelo NVDA mesmo depois da correção anterior. Criada uma região `aria-live` separada, permanentemente visível (nunca com `display:none`), só para esse anúncio — a caixinha visual de status seguia escondendo/mostrando ao mesmo tempo em que o texto mudava, o que o NVDA não captava de forma confiável.
+
 ## v2.7.0
 - Lista de Documentos passou de cartões para **tabela** (colunas: Arquivo, Descrição, Ações), no mesmo padrão do Histórico e da Agenda.
 - Removida a linha redundante "Pertence ao agendamento/procedimento" — essa informação já está na descrição.
