@@ -3,6 +3,9 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.8.1
+- Corrigido bug de fuso horário na Agenda: ao editar um agendamento, o campo de data/hora era preenchido com os dígitos brutos do horário UTC salvo no banco (sem converter para horário local), e ao gravar de novo esse valor errado era reinterpretado como local — resultado: cada edição avançava o horário em 3 horas.
+
 ## v2.8.0
 - Botão **Gravar registro / Salvar edição** ganhou atalho `Alt+S`, funcionando mesmo com o foco em qualquer campo do formulário.
 - Corrigida uma falha em `showStatus()`: a mensagem de confirmação (ex. "Registro gravado.") era escrita na região `aria-live` antes dela ficar visível, o que podia fazer o NVDA não anunciar o sucesso do lançamento mesmo tendo sido gravado.

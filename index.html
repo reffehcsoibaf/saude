@@ -444,7 +444,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.8.0</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.8.1</div>
   </div>
 </div>
 
@@ -466,6 +466,17 @@ function fmtMoney(n){ return (Number(n)||0).toLocaleString('pt-BR', {style:'curr
 function fmtData(d){ if(!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
 function fmtMesRef(d){ if(!d) return ''; const [y,m] = d.split('-'); return `${m}/${y}`; }
 function fmtDataHora(iso){ if(!iso) return ''; const dt = new Date(iso); return dt.toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'}); }
+
+// input[type=datetime-local] espera "AAAA-MM-DDTHH:MM" em horário LOCAL.
+// data_hora vem do Supabase em UTC; usar .slice(0,16) nela copiava os
+// dígitos do UTC direto pro campo, sem converter — cada edição salva de
+// novo somava o fuso (3h) por cima do valor anterior.
+function isoParaDatetimeLocal(iso){
+  if(!iso) return '';
+  const dt = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+}
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
 function showStatus(msg, type){
   const el = document.getElementById('global-status');
@@ -873,7 +884,7 @@ window.editarAgenda = function(id){
   const a = agendaItens.find(x => x.id === id);
   if(!a) return;
   document.getElementById('ag-edit-id').value = a.id;
-  document.getElementById('a-data').value = a.data_hora ? a.data_hora.slice(0,16) : '';
+  document.getElementById('a-data').value = a.data_hora ? isoParaDatetimeLocal(a.data_hora) : '';
   document.getElementById('a-categoria').value = a.categoria;
   document.getElementById('a-prestador').value = a.prestador;
   document.getElementById('a-endereco').value = a.endereco || '';
