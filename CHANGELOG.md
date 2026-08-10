@@ -3,6 +3,9 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.9.0
+- Categorias e Prestadores, na aba Configurações, agora são exibidos como tabelas (com cabeçalho "Nome" e coluna de ações), no mesmo padrão usado nas outras listas do app (Agenda, Documentos), em vez da lista de caixinhas anterior.
+
 ## v2.8.1
 - Corrigido bug de fuso horário na Agenda: ao editar um agendamento, o campo de data/hora era preenchido com os dígitos brutos do horário UTC salvo no banco (sem converter para horário local), e ao gravar de novo esse valor errado era reinterpretado como local — resultado: cada edição avançava o horário em 3 horas.
 

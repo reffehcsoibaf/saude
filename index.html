@@ -68,8 +68,6 @@
   .hidden{display:none !important;}
   .doc-list{display:flex;flex-direction:column;gap:10px;}
   .doc-item{border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
-  .config-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
-  .config-item{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;}
 </style>
 </head>
 <body>
@@ -412,12 +410,34 @@
   <section class="tab-panel" role="tabpanel" id="tab-config" aria-labelledby="tab-btn-config" hidden>
     <div class="panel">
       <h2>Categorias</h2>
-      <div class="config-list" id="config-categorias"></div>
+      <div style="overflow-x:auto;">
+      <table>
+        <caption>Categorias cadastradas</caption>
+        <thead>
+          <tr>
+            <th scope="col">Nome</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody id="config-categorias"></tbody>
+      </table>
+      </div>
       <button class="btn-ghost" onclick="addListItem('categorias')">Adicionar categoria</button>
     </div>
     <div class="panel">
       <h2>Prestadores</h2>
-      <div class="config-list" id="config-prestadores"></div>
+      <div style="overflow-x:auto;">
+      <table>
+        <caption>Prestadores cadastrados</caption>
+        <thead>
+          <tr>
+            <th scope="col">Nome</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody id="config-prestadores"></tbody>
+      </table>
+      </div>
       <button class="btn-ghost" onclick="addListItem('prestadores')">Adicionar prestador</button>
     </div>
     <div class="panel">
@@ -435,7 +455,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.8.1</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.9.0</div>
   </div>
 </div>
 
@@ -626,15 +646,17 @@ window.removerListItem = async function(tabela, id, nome){
 
 function renderConfigLista(containerId, itens, tabela){
   const el = document.getElementById(containerId);
-  if(itens.length === 0){ el.innerHTML = '<p class="empty">Nenhum item cadastrado.</p>'; return; }
+  if(itens.length === 0){ el.innerHTML = '<tr><td colspan="2" class="empty">Nenhum item cadastrado.</td></tr>'; return; }
   el.innerHTML = itens.map(i => `
-    <div class="config-item">
-      <span>${escapeHtml(i.nome)}</span>
-      <div class="btn-row" style="margin:0;">
-        <button class="btn-ghost" style="padding:5px 10px;font-size:12px;" onclick="editarListItem('${tabela}','${i.id}','${escapeHtml(i.nome)}')">Editar</button>
-        <button class="btn-danger-ghost" onclick="removerListItem('${tabela}','${i.id}','${escapeHtml(i.nome)}')">Remover</button>
-      </div>
-    </div>
+    <tr>
+      <td>${escapeHtml(i.nome)}</td>
+      <td>
+        <div class="btn-row" style="margin:0;">
+          <button class="btn-ghost" style="padding:5px 10px;font-size:12px;" onclick="editarListItem('${tabela}','${i.id}','${escapeHtml(i.nome)}')">Editar</button>
+          <button class="btn-danger-ghost" onclick="removerListItem('${tabela}','${i.id}','${escapeHtml(i.nome)}')">Remover</button>
+        </div>
+      </td>
+    </tr>
   `).join('');
 }
 
