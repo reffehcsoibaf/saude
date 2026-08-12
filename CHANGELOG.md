@@ -3,6 +3,10 @@
 Todas as mudanças notáveis deste projeto são registradas aqui.
 Formato de versão: MAJOR.MINOR.PATCH.
 
+## v2.10.0
+- Todas as tabelas (Histórico, Agenda, Documentos, Categorias, Prestadores) agora têm paginação padronizada, com botões Primeira / Anterior / Próxima / Última.
+- Nova opção em Configurações para escolher a quantidade de itens exibidos por página (10, 25, 50, 100, 200 ou todos), aplicada a todas as tabelas.
+
 ## v2.9.0
 - Categorias e Prestadores, na aba Configurações, agora são exibidos como tabelas (com cabeçalho "Nome" e coluna de ações), no mesmo padrão usado nas outras listas do app (Agenda, Documentos), em vez da lista de caixinhas anterior.
 

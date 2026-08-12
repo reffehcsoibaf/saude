@@ -62,6 +62,12 @@
   .badge-pago{background:var(--success-bg);color:var(--success);}
   .badge-aberto{background:var(--warning-bg);color:var(--warning);}
   .empty{text-align:center;color:var(--muted);padding:30px 0;font-size:14px;}
+  .paginacao{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:10px;}
+  .paginacao:empty{margin-top:0;}
+  .paginacao-info{font-size:12px;color:var(--muted);}
+  .paginacao-botoes{display:flex;gap:6px;flex-wrap:wrap;}
+  .paginacao-botoes button{padding:6px 12px;font-size:12px;}
+  .paginacao-botoes button:disabled{opacity:.45;cursor:default;}
   .status-msg{font-size:13px;padding:8px 10px;border-radius:8px;margin-bottom:12px;}
   .status-msg.error{background:var(--danger-bg);color:var(--danger);}
   .status-msg.ok{background:var(--success-bg);color:var(--success);}
@@ -188,25 +194,25 @@
       <div class="row4">
         <div>
           <label for="h-data">Data</label>
-          <input type="date" id="h-data" onchange="renderHistorico()">
+          <input type="date" id="h-data" onchange="paginaAtual.procedimentos=1;renderHistorico()">
         </div>
         <div>
           <label for="h-mes-ref">Mês de referência</label>
-          <input type="month" id="h-mes-ref" onchange="renderHistorico()">
+          <input type="month" id="h-mes-ref" onchange="paginaAtual.procedimentos=1;renderHistorico()">
         </div>
         <div>
           <label for="h-categoria">Categoria</label>
-          <select id="h-categoria" onchange="renderHistorico()"><option value="">Todas</option></select>
+          <select id="h-categoria" onchange="paginaAtual.procedimentos=1;renderHistorico()"><option value="">Todas</option></select>
         </div>
         <div>
           <label for="h-prestador">Prestador</label>
-          <select id="h-prestador" onchange="renderHistorico()"><option value="">Todos</option></select>
+          <select id="h-prestador" onchange="paginaAtual.procedimentos=1;renderHistorico()"><option value="">Todos</option></select>
         </div>
       </div>
       <div class="row3">
         <div>
           <label for="h-usuario">Usuário</label>
-          <select id="h-usuario" onchange="renderHistorico()">
+          <select id="h-usuario" onchange="paginaAtual.procedimentos=1;renderHistorico()">
             <option value="">Todos</option>
             <option value="titular">Titular</option>
             <option value="dependente">Dependente</option>
@@ -214,7 +220,7 @@
         </div>
         <div>
           <label for="h-status">Status</label>
-          <select id="h-status" onchange="renderHistorico()">
+          <select id="h-status" onchange="paginaAtual.procedimentos=1;renderHistorico()">
             <option value="">Todos</option>
             <option value="pago">Pago</option>
             <option value="aberto">Em aberto</option>
@@ -222,7 +228,7 @@
         </div>
         <div>
           <label for="h-busca">Buscar</label>
-          <input type="text" id="h-busca" oninput="renderHistorico()">
+          <input type="text" id="h-busca" oninput="paginaAtual.procedimentos=1;renderHistorico()">
         </div>
       </div>
       <button class="btn-ghost" onclick="limparFiltrosHistorico()">Limpar filtros</button>
@@ -252,6 +258,7 @@
         <tbody id="historico-body"></tbody>
       </table>
       </div>
+      <div class="paginacao" id="historico-paginacao"></div>
     </div>
   </section>
 
@@ -306,19 +313,19 @@
       <div class="row4">
         <div>
           <label for="ag-data">Data</label>
-          <input type="date" id="ag-data" onchange="renderAgenda()">
+          <input type="date" id="ag-data" onchange="paginaAtual.agenda=1;renderAgenda()">
         </div>
         <div>
           <label for="ag-categoria">Categoria</label>
-          <select id="ag-categoria" onchange="renderAgenda()"><option value="">Todas</option></select>
+          <select id="ag-categoria" onchange="paginaAtual.agenda=1;renderAgenda()"><option value="">Todas</option></select>
         </div>
         <div>
           <label for="ag-prestador">Prestador</label>
-          <select id="ag-prestador" onchange="renderAgenda()"><option value="">Todos</option></select>
+          <select id="ag-prestador" onchange="paginaAtual.agenda=1;renderAgenda()"><option value="">Todos</option></select>
         </div>
         <div>
           <label for="ag-status">Status</label>
-          <select id="ag-status" onchange="renderAgenda()">
+          <select id="ag-status" onchange="paginaAtual.agenda=1;renderAgenda()">
             <option value="">Todos</option>
             <option value="agendado">Agendado</option>
             <option value="realizado">Realizado</option>
@@ -328,7 +335,7 @@
       <div class="row">
         <div>
           <label for="ag-busca">Buscar</label>
-          <input type="text" id="ag-busca" oninput="renderAgenda()">
+          <input type="text" id="ag-busca" oninput="paginaAtual.agenda=1;renderAgenda()">
         </div>
       </div>
       <button class="btn-ghost" onclick="limparFiltrosAgenda()">Limpar filtros</button>
@@ -353,6 +360,7 @@
         <tbody id="agenda-body"></tbody>
       </table>
       </div>
+      <div class="paginacao" id="agenda-paginacao"></div>
     </div>
   </section>
 
@@ -376,11 +384,11 @@
       <div class="row">
         <div>
           <label for="d-busca">Buscar</label>
-          <input type="text" id="d-busca" oninput="renderDocumentos()">
+          <input type="text" id="d-busca" oninput="paginaAtual.documentos=1;renderDocumentos()">
         </div>
         <div>
           <label for="d-vinculo">Vínculo</label>
-          <select id="d-vinculo" onchange="renderDocumentos()">
+          <select id="d-vinculo" onchange="paginaAtual.documentos=1;renderDocumentos()">
             <option value="">Todos</option>
             <option value="vinculado">Vinculado a um lançamento</option>
             <option value="avulso">Avulso</option>
@@ -404,10 +412,25 @@
         <tbody id="doc-list"></tbody>
       </table>
       </div>
+      <div class="paginacao" id="documentos-paginacao"></div>
     </div>
   </section>
 
   <section class="tab-panel" role="tabpanel" id="tab-config" aria-labelledby="tab-btn-config" hidden>
+    <div class="panel">
+      <h2>Exibição</h2>
+      <div>
+        <label for="cfg-itens-por-pagina">Itens por página nas tabelas</label>
+        <select id="cfg-itens-por-pagina" onchange="alterarItensPorPagina(this.value)">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="todos">Todos</option>
+        </select>
+      </div>
+    </div>
     <div class="panel">
       <h2>Categorias</h2>
       <div style="overflow-x:auto;">
@@ -422,6 +445,7 @@
         <tbody id="config-categorias"></tbody>
       </table>
       </div>
+      <div class="paginacao" id="config-categorias-paginacao"></div>
       <button class="btn-ghost" onclick="addListItem('categorias')">Adicionar categoria</button>
     </div>
     <div class="panel">
@@ -438,6 +462,7 @@
         <tbody id="config-prestadores"></tbody>
       </table>
       </div>
+      <div class="paginacao" id="config-prestadores-paginacao"></div>
       <button class="btn-ghost" onclick="addListItem('prestadores')">Adicionar prestador</button>
     </div>
     <div class="panel">
@@ -455,7 +480,7 @@
 
   </main>
 
-  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.9.0</div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 4px;" id="version-footer">v2.10.0</div>
   </div>
 </div>
 
@@ -472,6 +497,72 @@ let prestadores = [];
 let procedimentos = [];
 let agendaItens = [];
 let documentos = [];
+
+// --- Paginação ---
+const PAGINACAO_TABELAS = ['procedimentos','agenda','documentos','categorias','prestadores'];
+let paginaAtual = { procedimentos:1, agenda:1, documentos:1, categorias:1, prestadores:1 };
+
+function obterItensPorPagina(){
+  const v = localStorage.getItem('itensPorPagina');
+  if(v === 'todos') return Infinity;
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n > 0 ? n : 25;
+}
+
+function paginarItens(itens, tabela){
+  const porPagina = obterItensPorPagina();
+  const totalPaginas = porPagina === Infinity ? 1 : Math.max(1, Math.ceil(itens.length / porPagina));
+  if(paginaAtual[tabela] > totalPaginas) paginaAtual[tabela] = totalPaginas;
+  if(paginaAtual[tabela] < 1) paginaAtual[tabela] = 1;
+  const inicio = porPagina === Infinity ? 0 : (paginaAtual[tabela] - 1) * porPagina;
+  const fim = porPagina === Infinity ? itens.length : inicio + porPagina;
+  return { pagina: itens.slice(inicio, fim), totalPaginas, paginaAtualNum: paginaAtual[tabela] };
+}
+
+function renderPaginacao(containerId, tabela, totalItens, totalPaginas){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  if(totalItens === 0){ el.innerHTML = ''; return; }
+  const pag = paginaAtual[tabela];
+  el.innerHTML = `
+    <span class="paginacao-info">Página ${pag} de ${totalPaginas} (${totalItens} ${totalItens === 1 ? 'item' : 'itens'})</span>
+    <div class="paginacao-botoes" role="group" aria-label="Navegação de páginas">
+      <button type="button" class="btn-ghost" ${pag<=1?'disabled':''} onclick="irParaPagina('${tabela}',1)" aria-label="Primeira página">Primeira</button>
+      <button type="button" class="btn-ghost" ${pag<=1?'disabled':''} onclick="irParaPagina('${tabela}',${pag-1})" aria-label="Página anterior">Anterior</button>
+      <button type="button" class="btn-ghost" ${pag>=totalPaginas?'disabled':''} onclick="irParaPagina('${tabela}',${pag+1})" aria-label="Próxima página">Próxima</button>
+      <button type="button" class="btn-ghost" ${pag>=totalPaginas?'disabled':''} onclick="irParaPagina('${tabela}',${totalPaginas})" aria-label="Última página">Última</button>
+    </div>`;
+}
+
+const RENDER_FUNCS = {
+  procedimentos: () => window.renderHistorico(),
+  agenda: () => renderAgenda(),
+  documentos: () => renderDocumentos(),
+  categorias: () => renderConfigLista('config-categorias', categorias, 'categorias'),
+  prestadores: () => renderConfigLista('config-prestadores', prestadores, 'prestadores')
+};
+
+window.irParaPagina = function(tabela, pagina){
+  paginaAtual[tabela] = pagina;
+  RENDER_FUNCS[tabela]();
+  const tabelaEl = document.getElementById(
+    tabela === 'procedimentos' ? 'historico-body' :
+    tabela === 'agenda' ? 'agenda-body' :
+    tabela === 'documentos' ? 'doc-list' :
+    tabela === 'categorias' ? 'config-categorias' : 'config-prestadores'
+  );
+  if(tabelaEl) tabelaEl.closest('table')?.scrollIntoView({block:'nearest'});
+};
+
+window.alterarItensPorPagina = function(valor){
+  localStorage.setItem('itensPorPagina', valor);
+  PAGINACAO_TABELAS.forEach(t => paginaAtual[t] = 1);
+  RENDER_FUNCS.procedimentos();
+  RENDER_FUNCS.agenda();
+  RENDER_FUNCS.documentos();
+  RENDER_FUNCS.categorias();
+  RENDER_FUNCS.prestadores();
+};
 
 function fmtMoney(n){ return (Number(n)||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
 function fmtData(d){ if(!d) return ''; const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
@@ -554,6 +645,7 @@ async function entrarNoApp(email){
   document.getElementById('tela-login').classList.add('hidden');
   document.getElementById('app-conteudo').classList.remove('hidden');
   document.getElementById('usuario-logado').textContent = email ? `Logado como ${email}` : '';
+  document.getElementById('cfg-itens-por-pagina').value = localStorage.getItem('itensPorPagina') || '25';
   await carregarListas();
   restaurarCamposLembrados();
   await carregarProcedimentos();
@@ -646,8 +738,14 @@ window.removerListItem = async function(tabela, id, nome){
 
 function renderConfigLista(containerId, itens, tabela){
   const el = document.getElementById(containerId);
-  if(itens.length === 0){ el.innerHTML = '<tr><td colspan="2" class="empty">Nenhum item cadastrado.</td></tr>'; return; }
-  el.innerHTML = itens.map(i => `
+  const paginacaoId = containerId + '-paginacao';
+  if(itens.length === 0){
+    el.innerHTML = '<tr><td colspan="2" class="empty">Nenhum item cadastrado.</td></tr>';
+    renderPaginacao(paginacaoId, tabela, 0, 1);
+    return;
+  }
+  const { pagina, totalPaginas } = paginarItens(itens, tabela);
+  el.innerHTML = pagina.map(i => `
     <tr>
       <td>${escapeHtml(i.nome)}</td>
       <td>
@@ -658,6 +756,7 @@ function renderConfigLista(containerId, itens, tabela){
       </td>
     </tr>
   `).join('');
+  renderPaginacao(paginacaoId, tabela, itens.length, totalPaginas);
 }
 
 window.updateCopart = function(){
@@ -785,6 +884,7 @@ async function carregarProcedimentos(){
 
 window.limparFiltrosHistorico = function(){
   ['h-data','h-mes-ref','h-categoria','h-prestador','h-usuario','h-status','h-busca'].forEach(id => document.getElementById(id).value = '');
+  paginaAtual.procedimentos = 1;
   renderHistorico();
 };
 
@@ -829,9 +929,11 @@ window.renderHistorico = function(){
   const body = document.getElementById('historico-body');
   if(filtrados.length === 0){
     body.innerHTML = `<tr><td colspan="10" class="empty">Nenhum registro encontrado.</td></tr>`;
+    renderPaginacao('historico-paginacao', 'procedimentos', 0, 1);
     return;
   }
-  body.innerHTML = filtrados.map(p => `
+  const { pagina, totalPaginas } = paginarItens(filtrados, 'procedimentos');
+  body.innerHTML = pagina.map(p => `
     <tr>
       <td>
         <label class="sr-only" for="pago-${p.id}">Marcar procedimento de ${escapeHtml(p.categoria)} em ${fmtData(p.data)} como pago</label>
@@ -853,6 +955,7 @@ window.renderHistorico = function(){
       </td>
     </tr>
   `).join('');
+  renderPaginacao('historico-paginacao', 'procedimentos', filtrados.length, totalPaginas);
 };
 
 window.marcarPago = async function(id, pago){
@@ -953,6 +1056,7 @@ async function carregarAgenda(){
 
 window.limparFiltrosAgenda = function(){
   ['ag-data','ag-categoria','ag-prestador','ag-status','ag-busca'].forEach(id => document.getElementById(id).value = '');
+  paginaAtual.agenda = 1;
   renderAgenda();
 };
 
@@ -979,9 +1083,11 @@ function renderAgenda(){
   const body = document.getElementById('agenda-body');
   if(filtrados.length === 0){
     body.innerHTML = `<tr><td colspan="7" class="empty">Nenhum agendamento encontrado.</td></tr>`;
+    renderPaginacao('agenda-paginacao', 'agenda', 0, 1);
     return;
   }
-  body.innerHTML = filtrados.map(a => `
+  const { pagina, totalPaginas } = paginarItens(filtrados, 'agenda');
+  body.innerHTML = pagina.map(a => `
     <tr>
       <td>
         <label class="sr-only" for="real-${a.id}">Marcar agendamento de ${escapeHtml(a.categoria)} como realizado</label>
@@ -1000,6 +1106,7 @@ function renderAgenda(){
       </td>
     </tr>
   `).join('');
+  renderPaginacao('agenda-paginacao', 'agenda', filtrados.length, totalPaginas);
 }
 
 window.marcarRealizado = async function(id, realizado){
@@ -1063,6 +1170,7 @@ async function carregarDocumentos(){
 window.limparFiltrosDocumentos = function(){
   document.getElementById('d-busca').value = '';
   document.getElementById('d-vinculo').value = '';
+  paginaAtual.documentos = 1;
   renderDocumentos();
 };
 
@@ -1082,8 +1190,13 @@ function renderDocumentos(){
   });
 
   const el = document.getElementById('doc-list');
-  if(filtrados.length === 0){ el.innerHTML = `<tr><td colspan="3" class="empty">Nenhum documento encontrado.</td></tr>`; return; }
-  el.innerHTML = filtrados.map(d => `
+  if(filtrados.length === 0){
+    el.innerHTML = `<tr><td colspan="3" class="empty">Nenhum documento encontrado.</td></tr>`;
+    renderPaginacao('documentos-paginacao', 'documentos', 0, 1);
+    return;
+  }
+  const { pagina, totalPaginas } = paginarItens(filtrados, 'documentos');
+  el.innerHTML = pagina.map(d => `
     <tr>
       <td>${escapeHtml(d.nome_arquivo)}</td>
       <td>${escapeHtml(d.descricao || 'Sem descrição')}</td>
@@ -1096,6 +1209,7 @@ function renderDocumentos(){
       </td>
     </tr>
   `).join('');
+  renderPaginacao('documentos-paginacao', 'documentos', filtrados.length, totalPaginas);
 }
 
 window.abrirDocumento = async function(caminho){
